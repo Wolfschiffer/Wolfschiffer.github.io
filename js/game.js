@@ -1,4 +1,4 @@
-// Game data with local audio files
+// Game data with local audio files - use relative paths
 const numbers = [
     { value: 1, word: 'one', audio: 'audio/one.mp3' },
     { value: 2, word: 'two', audio: 'audio/two.mp3' },
@@ -12,7 +12,7 @@ const numbers = [
     { value: 10, word: 'ten', audio: 'audio/ten.mp3' }
 ];
 
-// Local sound effects
+// Local sound effects - use relative paths
 const soundEffects = {
     correct: 'sfx/CorrectAnswer.mp3',
     wrong: 'sfx/IncorrectAnswer.mp3',
@@ -46,6 +46,7 @@ window.restartGame = restartGame;
 // Initialize game
 function initGame() {
     console.log('Game initializing...');
+    console.log('Current URL:', window.location.href);
     
     // Create audio player for number pronunciation
     audioPlayer = new Audio();
@@ -89,7 +90,7 @@ function addRestartButton() {
     // Remove any existing button first
     removeRestartButton();
     
-    // Create restart button with same style as other buttons
+    // Create restart button
     const restartBtn = document.createElement('button');
     restartBtn.className = 'restart-btn';
     restartBtn.textContent = 'Play Again';
@@ -116,13 +117,17 @@ function playSound(soundType) {
     if (isAudioMuted) return;
     
     console.log('Playing sound:', soundType);
+    console.log('Sound path:', soundEffects[soundType]);
     
     // Create a new audio element for each sound to avoid conflicts
     const sound = new Audio(soundEffects[soundType]);
     sound.volume = 0.7;
     
     sound.play().catch(error => {
-        console.log('Sound effect failed:', error);
+        console.log('Sound effect failed!');
+        console.log('Error:', error);
+        console.log('Attempted path:', soundEffects[soundType]);
+        console.log('Full URL:', window.location.origin + '/' + soundEffects[soundType]);
     });
 }
 
@@ -130,6 +135,7 @@ function playAudio() {
     if (!currentNumber || isAudioMuted || !gameActive) return;
     
     console.log('Playing audio for:', currentNumber.word);
+    console.log('Audio path:', currentNumber.audio);
     
     // Stop any currently playing audio
     if (audioPlayer) {
@@ -140,7 +146,10 @@ function playAudio() {
     // Set and play audio
     audioPlayer.src = currentNumber.audio;
     audioPlayer.play().catch(error => {
-        console.log('Audio file not found:', error);
+        console.log('Number audio failed!');
+        console.log('Error:', error);
+        console.log('Attempted path:', currentNumber.audio);
+        console.log('Full URL:', window.location.origin + '/' + currentNumber.audio);
     });
     
     // Visual feedback on speaker
