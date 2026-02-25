@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stick Numbers - Learn English</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="game-container">
+
+    <h1>🎯 Stick Numbers</h1>
+    
+    <div class="instructions">
+      👆 Click the number that matches the word<br>
+      🔊 Press the audio button to hear pronunciation
+    </div>
+
+    <div id="stickman">🧍</div>
+
+    <div class="platforms">
+      <button class="platform" onclick="checkAnswer(this)"></button>
+      <button class="platform" onclick="checkAnswer(this)"></button>
+      <button class="platform" onclick="checkAnswer(this)"></button>
+    </div>
+
+    <button onclick="playAudio()">🔊 Listen (Optional)</button>
+
+    <div id="wordDisplay" class="word-box"></div>
+
+    <p>Points: <span id="score">0</span></p>
+
+  </div>
+
+  <script src="js/game.js"></script>
+
+</body>
+</html>
