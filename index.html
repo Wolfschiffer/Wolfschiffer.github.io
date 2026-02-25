@@ -10,11 +10,13 @@
 
   <div class="game-container">
 
-    <h1>🎯 Stick Numbers</h1>
+    <div class="header">
+      <h1>Stick Numbers</h1>
+      <button id="speaker-toggle" class="speaker-btn">🔊</button>
+    </div>
     
     <div class="instructions">
-      👆 Click the number that matches the word<br>
-      🔊 Press the audio button to hear pronunciation
+      👆 Click the number that matches the word
     </div>
 
     <div id="stickman">🧍</div>
@@ -25,11 +27,21 @@
       <button class="platform" onclick="checkAnswer(this)"></button>
     </div>
 
-    <button onclick="playAudio()">🔊 Listen (Optional)</button>
-
     <div id="wordDisplay" class="word-box"></div>
 
-    <p>Points: <span id="score">0</span></p>
+    <div class="stats">
+      <div>
+        <p>Points: <span id="score">0</span></p>
+      </div>
+      <div class="lives-box">
+        <span>Lives:</span>
+        <div id="lives" class="lives-display">
+          <span class="life-circle full"></span>
+          <span class="life-circle full"></span>
+          <span class="life-circle full"></span>
+        </div>
+      </div>
+    </div>
 
   </div>
 

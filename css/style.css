@@ -6,7 +6,7 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #87CEEB 0%, #ffffff 100%);
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -21,31 +21,71 @@ body {
   text-align: center;
   max-width: 500px;
   width: 90%;
-  position: relative; /* For stickman positioning */
-  min-height: 600px; /* Give space for stickman to move */
+  margin: 0 auto;
+  position: relative;
 }
 
-h1 {
-  color: #4a5568;
-  margin-bottom: 1.5rem;
-  font-size: 2.5rem;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.header h1 {
+  color: #2c3e50;
+  font-size: 2rem;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(135, 206, 235, 0.3);
+}
+
+.speaker-btn {
+  background: none;
+  border: 2px solid #2c3e50;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: #2c3e50;
+  padding: 0;
+  margin: 0;
+}
+
+.speaker-btn:hover {
+  background: #e6f3ff;
+  transform: scale(1.1);
+}
+
+.speaker-btn.muted {
+  background: #fed7d7;
+  border-color: #e53e3e;
+  color: #e53e3e;
+}
+
+.instructions {
+  background: #f0f8ff;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-size: 1rem;
+  color: #2c3e50;
+  border: 1px solid #87CEEB;
+  width: 100%;
 }
 
 #stickman {
   font-size: 8rem;
-  margin: 0.5rem 0;
-  position: relative;
-  z-index: 10;
+  margin: 1rem 0;
+  transition: all 0.3s ease;
   display: inline-block;
-  transition: all 0.5s ease-in-out;
-  transform-origin: center bottom;
-  will-change: transform;
-}
-
-
-#stickman.hidden {
-  transform: translateY(20px);
-  opacity: 0.5;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  width: 100%;
 }
 
 .platforms {
@@ -53,13 +93,14 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin: 2rem 0;
+  width: 100%;
 }
 
 .platform {
   aspect-ratio: 1;
-  border: 3px solid #4a5568;
+  border: 3px solid #2c3e50;
   border-radius: 15px;
-  background: #f7fafc;
+  background: #f0f8ff;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -67,13 +108,15 @@ h1 {
   justify-content: center;
   font-size: 2.5rem;
   font-weight: bold;
-  position: relative;
-  z-index: 5;
+  color: #2c3e50;
+  box-shadow: 0 4px 6px rgba(135, 206, 235, 0.3);
+  width: 100%;
 }
 
 .platform:hover:not(.correct):not(.wrong) {
-  background: #e2e8f0;
+  background: #e6f3ff;
   transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(135, 206, 235, 0.4);
 }
 
 .platform.correct {
@@ -81,7 +124,7 @@ h1 {
   border-color: #38a169;
   color: #22543d;
   cursor: default;
-  z-index: 20;
+  box-shadow: 0 4px 6px rgba(56, 161, 105, 0.3);
 }
 
 .platform.wrong {
@@ -89,6 +132,7 @@ h1 {
   border-color: #e53e3e;
   color: #742a2a;
   animation: shake 0.3s ease-in-out;
+  box-shadow: 0 4px 6px rgba(229, 62, 62, 0.3);
 }
 
 .platform.correct:hover,
@@ -103,70 +147,124 @@ h1 {
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  50% { transform: translateX(10px); }
-  75% { transform: translateX(-5px); }
-}
-
-button:not(.platform) {
-  background: #48bb78;
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  font-size: 1.1rem;
-  border-radius: 10px;
-  cursor: pointer;
-  margin: 1rem 0;
-  transition: all 0.3s ease;
-  border: 2px solid #2f855a;
-}
-
-button:not(.platform):hover {
-  background: #38a169;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
-}
-
-button:not(.platform):active {
-  transform: translateY(0);
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 .word-box {
-  background: #edf2f7;
+  background: #f0f8ff;
   padding: 1.5rem;
   border-radius: 10px;
   margin: 1rem 0;
   font-size: 2rem;
   font-weight: bold;
-  color: #2d3748;
-  border: 2px dashed #cbd5e0;
+  color: #2c3e50;
+  border: 2px solid #87CEEB;
+  width: 100%;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-transform: capitalize;
+  box-shadow: 0 4px 6px rgba(135, 206, 235, 0.2);
+  cursor: default;
 }
 
-#score {
+.word-box:hover {
+  transform: none;
+  background: #f0f8ff;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.stats p {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #2c3e50;
+}
+
+.lives-box {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.lives-box span {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.lives-display {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.life-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.life-circle.full {
+  background: #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.life-circle.empty {
+  background: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.restart-btn {
+  border: 3px solid #2c3e50;
+  border-radius: 15px;
+  background: #f0f8ff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
   font-size: 2rem;
   font-weight: bold;
-  color: #48bb78;
+  color: #2c3e50;
+  box-shadow: 0 4px 6px rgba(135, 206, 235, 0.3);
+  padding: 1rem 2rem;
+  margin: 1.5rem auto 0;
+  width: fit-content;
+  text-align: center;
+  min-width: 200px;
 }
 
-p {
-  font-size: 1.2rem;
-  color: #4a5568;
-  margin-top: 1rem;
+.restart-btn:hover {
+  background: #e6f3ff;
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(135, 206, 235, 0.4);
 }
 
-.instructions {
-  background: #fef3c7;
-  padding: 0.5rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  color: #92400e;
+.restart-btn:active {
+  transform: scale(0.95);
 }
 
 @media (max-width: 400px) {
   .game-container {
     padding: 1rem;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .speaker-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
   }
   
   #stickman {
@@ -180,6 +278,28 @@ p {
   .word-box {
     font-size: 1.5rem;
     padding: 1rem;
-    transition: all 0.3s ease;
+    min-height: 60px;
+  }
+  
+  .stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .lives-box {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .life-circle {
+    width: 25px;
+    height: 25px;
+  }
+  
+  .restart-btn {
+    font-size: 1.5rem;
+    padding: 0.8rem 1.5rem;
+    min-width: 150px;
   }
 }
