@@ -1,4 +1,4 @@
-// Game data with local audio files
+// Game data with local audio files - use relative paths
 const numbers = [
     { value: 1, word: 'one', audio: 'audio/one.mp3' },
     { value: 2, word: 'two', audio: 'audio/two.mp3' },
@@ -35,14 +35,14 @@ let gameEnded = false;
 
 // Eagle animation variables
 let eagleX = 200;
-let eagleY = 200; // Ground level at bottom edge
+let eagleY = 200;
 let eagleTargetX = 200;
 let isJumping = false;
 let jumpProgress = 0;
 let eagleDirection = 1;
 
 // Animation states
-let eagleState = 'idle'; // 'idle', 'jumping', 'celebrating', 'wrong'
+let eagleState = 'idle';
 let frameCount = 0;
 let currentWrongFrame = 0;
 let wrongAnimationSpeed = 6;
@@ -55,7 +55,7 @@ let currentTime = 0;
 
 // DOM Elements
 const canvas = document.getElementById('stickman-canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 const wordDisplay = document.getElementById('wordDisplay');
 const scoreDisplay = document.getElementById('score');
 const highScoreDisplay = document.getElementById('highScore');
@@ -79,45 +79,66 @@ let eagleImages = {
     celebrate: null,
     wrong: []
 };
+let imagesLoaded = 0;
+let totalImagesToLoad = 1 + 1 + 1 + 12; // idle + jump + celebrate + 12 wrong
 
-// Load eagle images
+// Load eagle images with error handling for GitHub Pages
 function loadEagleImages() {
-    console.log('Loading eagle images...');
+    console.log('Loading eagle images for GitHub Pages...');
+    console.log('Base URL:', window.location.origin);
     
-    eagleImages.idle = new Image();
-    eagleImages.idle.src = 'images/eagle_idle_01.png';
-    
-    eagleImages.jump = new Image();
-    eagleImages.jump.src = 'images/eagle_jump_01.png';
-    
-    eagleImages.celebrate = new Image();
-    eagleImages.celebrate.src = 'images/eagle_center (1).png';
-    
-    // Load 12 wrong animation frames
-    for (let i = 1; i <= 12; i++) {
+    // Helper function to create image with error handling
+    function createImage(src, name) {
         const img = new Image();
-        const frameNum = i.toString().padStart(2, '0');
-        img.src = `images/eagle_wrong_${frameNum}.png`;
+        img.src = src;
         
         img.onload = () => {
-            console.log(`✅ Loaded wrong frame ${frameNum}`);
+            imagesLoaded++;
+            console.log(`✅ Loaded: ${name} (${imagesLoaded}/${totalImagesToLoad})`);
         };
         
         img.onerror = () => {
-            console.log(`❌ Failed to load wrong frame ${frameNum} - will use idle instead`);
+            imagesLoaded++;
+            console.log(`❌ Failed to load: ${src} - ${name} will use fallback`);
+            // Mark as loaded but keep img as is (will be checked in draw)
         };
         
-        eagleImages.wrong.push(img);
+        return img;
     }
     
-    eagleImages.idle.onload = () => console.log('✅ Loaded idle image');
-    eagleImages.jump.onload = () => console.log('✅ Loaded jump image');
-    eagleImages.celebrate.onload = () => console.log('✅ Loaded celebrate image');
+    // Try different path variations for GitHub Pages
+    const basePath = '';
+    const altPath1 = '/stick-numbers';
+    const altPath2 = '/English-Next-Level-Game';
+    
+    // You might need to adjust these paths based on your repository name
+    eagleImages.idle = createImage('images/eagle_idle_01.png', 'idle');
+    eagleImages.jump = createImage('images/eagle_jump_01.png', 'jump');
+    eagleImages.celebrate = createImage('images/eagle_center (1).png', 'celebrate');
+    
+    // Load 12 wrong animation frames
+    for (let i = 1; i <= 12; i++) {
+        const frameNum = i.toString().padStart(2, '0');
+        const img = createImage(`images/eagle_wrong_${frameNum}.png`, `wrong_${frameNum}`);
+        eagleImages.wrong.push(img);
+    }
 }
 
 // Initialize game
 function initGame() {
     console.log('Game initializing...');
+    console.log('Current URL:', window.location.href);
+    console.log('Canvas element:', canvas);
+    
+    if (!canvas) {
+        console.error('Canvas not found!');
+        return;
+    }
+    
+    if (!ctx) {
+        console.error('Could not get canvas context!');
+        return;
+    }
     
     canvas.width = 400;
     canvas.height = 200;
@@ -137,11 +158,17 @@ function initGame() {
     
     if (startButton) {
         startButton.addEventListener('click', startGame);
+    } else {
+        console.error('Start button not found!');
     }
     
-    platforms.forEach(platform => {
-        platform.addEventListener('click', handlePlatformClick);
-    });
+    if (platforms.length > 0) {
+        platforms.forEach(platform => {
+            platform.addEventListener('click', handlePlatformClick);
+        });
+    } else {
+        console.error('No platforms found!');
+    }
     
     animate();
     showStartScreen();
@@ -149,8 +176,10 @@ function initGame() {
 
 // Animation loop
 function animate() {
-    updateEagle();
-    drawEagle();
+    if (ctx) {
+        updateEagle();
+        drawEagle();
+    }
     requestAnimationFrame(animate);
 }
 
@@ -182,9 +211,7 @@ function updateEagle() {
                 frameCount = 0;
                 currentWrongFrame++;
                 
-                // Check if we've reached the end of wrong animation
                 if (currentWrongFrame >= eagleImages.wrong.length) {
-                    // Reset to idle
                     eagleState = 'idle';
                     currentWrongFrame = 0;
                 }
@@ -196,6 +223,12 @@ function updateEagle() {
 function drawEagle() {
     ctx.clearRect(0, 0, 400, 200);
     
+    // Draw a simple stick figure as fallback if images aren't loaded
+    if (imagesLoaded < totalImagesToLoad) {
+        drawFallbackEagle();
+        return;
+    }
+    
     // Determine which image to use
     let img = null;
     if (eagleState === 'idle') {
@@ -205,33 +238,68 @@ function drawEagle() {
     } else if (eagleState === 'celebrating') {
         img = eagleImages.celebrate;
     } else if (eagleState === 'wrong') {
-        // Check if current frame is valid and loaded
         if (currentWrongFrame < eagleImages.wrong.length && 
             eagleImages.wrong[currentWrongFrame] && 
             eagleImages.wrong[currentWrongFrame].complete && 
             eagleImages.wrong[currentWrongFrame].naturalHeight !== 0) {
             img = eagleImages.wrong[currentWrongFrame];
         } else {
-            // If wrong frame isn't available, show idle instead
             img = eagleImages.idle;
         }
     }
     
-    // Only draw if we have a valid loaded image
+    // Draw if image is valid and loaded
     if (img && img.complete && img.naturalHeight !== 0) {
         ctx.save();
-        
-        // Position the eagle at (eagleX, eagleY)
         ctx.translate(eagleX, eagleY);
         
         if (eagleDirection === -1) {
             ctx.scale(-1, 1);
         }
         
-        // Draw with the BOTTOM of the image at ground level
         ctx.drawImage(img, -60, -120, 120, 120);
         ctx.restore();
+    } else {
+        // Fallback drawing
+        drawFallbackEagle();
     }
+}
+
+// Fallback drawing function
+function drawFallbackEagle() {
+    ctx.save();
+    ctx.translate(eagleX, eagleY);
+    
+    // Draw a simple eagle shape
+    ctx.fillStyle = '#8B4513';
+    ctx.beginPath();
+    ctx.ellipse(0, -60, 30, 40, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.moveTo(20, -70);
+    ctx.lineTo(40, -65);
+    ctx.lineTo(20, -60);
+    ctx.fill();
+    
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(-15, -75, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(15, -75, 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#1e3c5c';
+    ctx.beginPath();
+    ctx.arc(-15, -75, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(15, -75, 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
 }
 
 function jumpToPlatform(platformIndex) {
@@ -406,10 +474,18 @@ function showStartScreen() {
     
     stopTimer();
     
-    startButton.style.display = 'block';
-    startButton.disabled = false;
-    gameStats.style.display = 'none';
-    instructions.textContent = '👆 Click START to begin';
+    if (startButton) {
+        startButton.style.display = 'block';
+        startButton.disabled = false;
+    }
+    
+    if (gameStats) {
+        gameStats.style.display = 'none';
+    }
+    
+    if (instructions) {
+        instructions.textContent = '👆 Click START to begin';
+    }
     
     platforms.forEach(platform => {
         platform.textContent = '?';
@@ -417,7 +493,10 @@ function showStartScreen() {
         platform.classList.remove('correct', 'wrong');
     });
     
-    wordDisplay.textContent = 'Ready?';
+    if (wordDisplay) {
+        wordDisplay.textContent = 'Ready?';
+    }
+    
     resetEagle();
 }
 
@@ -425,9 +504,17 @@ function startGame() {
     gameActive = true;
     gameContainer.classList.add('game-active');
     
-    startButton.style.display = 'none';
-    gameStats.style.display = 'flex';
-    instructions.textContent = '👆 Click the number that matches the word';
+    if (startButton) {
+        startButton.style.display = 'none';
+    }
+    
+    if (gameStats) {
+        gameStats.style.display = 'flex';
+    }
+    
+    if (instructions) {
+        instructions.textContent = '👆 Click the number that matches the word';
+    }
     
     resetGame();
     startTimer();
@@ -655,4 +742,5 @@ function updateScore() {
     if (scoreDisplay) scoreDisplay.textContent = score;
 }
 
+// Start the game
 window.addEventListener('load', initGame);
