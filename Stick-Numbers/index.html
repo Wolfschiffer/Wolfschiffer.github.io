@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Next Level - Number Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="game-container">
+
+    <div class="header">
+      <div class="title-section">
+        <h1>ENGLISH <span class="highlight">NEXT LEVEL</span></h1>
+        <p class="subtitle">numbers edition</p>
+      </div>
+      <button id="speaker-toggle" class="speaker-btn">🔊</button>
+    </div>
+    
+    <div class="instructions" id="main-instructions">
+      👆 Click START to begin
+    </div>
+
+    <canvas id="stickman-canvas" width="400" height="200"></canvas>
+
+    <div class="platforms" id="game-platforms">
+      <button class="platform" data-index="0">?</button>
+      <button class="platform" data-index="1">?</button>
+      <button class="platform" data-index="2">?</button>
+    </div>
+
+    <div id="wordDisplay" class="word-box">Ready?</div>
+
+    <button id="start-game-btn" class="start-btn">START GAME</button>
+
+    <div class="stats" id="game-stats" style="display: none;">
+      <div class="score-container">
+        <p>Points: <span id="score">0</span></p>
+        <p class="high-score">🏆 High Score: <span id="highScore">0</span></p>
+      </div>
+      <div class="timer-box">
+        <span>Time</span>
+        <div id="timer" class="timer-display">00:00</div>
+      </div>
+      <div class="multiplier-box">
+        <span>Multiplier</span>
+        <div id="multiplier" class="multiplier-display">1x</div>
+      </div>
+      <div class="lives-box">
+        <span>Lives</span>
+        <div id="lives" class="lives-display"></div>
+      </div>
+    </div>
+
+    <div class="ebook-credit">
+      <p>📘 from the ebook <strong>"English Next Level"</strong> by Mylena Machado</p>
+    </div>
+
+  </div>
+
+  <script src="js/game.js"></script>
+
+</body>
+</html>
