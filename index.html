@@ -3,26 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>English Next Level - Number Game</title>
+  <title>English Next Level - Games</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <div class="game-container">
-
+  <!-- MENU CONTAINER -->
+  <div class="game-container" id="menu-container">
     <div class="header">
       <div class="title-section">
         <h1>ENGLISH <span class="highlight">NEXT LEVEL</span></h1>
-        <p class="subtitle">numbers edition</p>
+        <p class="subtitle">learning games</p>
       </div>
-      <button id="speaker-toggle" class="speaker-btn">🔊</button>
+    </div>
+    
+    <div class="menu-content">
+      <div class="eagle-menu-icon">🦅</div>
+      <h2 class="menu-title">Choose a Game</h2>
+      
+      <div class="game-cards">
+        <div class="game-card" onclick="selectGame('numbers')">
+          <div class="card-icon">🔢</div>
+          <h3>Numbers 1-10</h3>
+          <p>Learn numbers 1 to 10</p>
+          <span class="card-badge easy">Easy</span>
+        </div>
+        
+        <div class="game-card" onclick="selectGame('numbers11-20')">
+          <div class="card-icon">🔢🔟</div>
+          <h3>Numbers 11-20</h3>
+          <p>Learn numbers 11 to 20</p>
+          <span class="card-badge medium">Medium</span>
+        </div>
+        
+        <div class="game-card" onclick="selectGame('tens')">
+          <div class="card-icon">💯</div>
+          <h3>Tens</h3>
+          <p>20, 30, 40, 50...</p>
+          <span class="card-badge medium">Medium</span>
+        </div>
+        
+        <div class="game-card" onclick="selectGame('hundreds')">
+          <div class="card-icon">🔢🔢</div>
+          <h3>Hundreds</h3>
+          <p>100, 200, 300...</p>
+          <span class="card-badge hard">Hard</span>
+        </div>
+      </div>
+      
+      <div class="menu-footer">
+        <p>📘 from the ebook <strong>"English Next Level"</strong> by Mylena Machado</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME CONTAINER -->
+  <div class="game-container" id="game-container" style="display: none;">
+    <div class="header">
+      <div class="title-section">
+        <h1>ENGLISH <span class="highlight">NEXT LEVEL</span></h1>
+        <p class="subtitle" id="game-subtitle">numbers edition</p>
+      </div>
+      <div class="header-buttons">
+        <button id="menu-button" class="menu-btn">🏠</button>
+        <button id="speaker-toggle" class="speaker-btn">🔊</button>
+      </div>
     </div>
     
     <div class="instructions" id="main-instructions">
       👆 Click START to begin
     </div>
 
-    <canvas id="stickman-canvas" width="400" height="200"></canvas>
+    <canvas id="stickman-canvas" width="500" height="200"></canvas>
 
     <div class="platforms" id="game-platforms">
       <button class="platform" data-index="0">?</button>
@@ -53,13 +105,11 @@
       </div>
     </div>
 
-    <div class="ebook-credit">
+    <div class="ebook-credit" id="game-credit">
       <p>📘 from the ebook <strong>"English Next Level"</strong> by Mylena Machado</p>
     </div>
-
   </div>
 
   <script src="js/game.js"></script>
-
 </body>
 </html>
