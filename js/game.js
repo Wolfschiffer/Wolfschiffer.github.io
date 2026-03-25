@@ -4,13 +4,51 @@
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-// Ajustes para mobile
-const JUMP_SPEED = isMobile ? 0.012 : 0.015;
-const HORIZONTAL_EASING = isMobile ? 0.12 : 0.15;
+// ============================================
+// CONFIGURAÇÕES ESPECÍFICAS PARA MOBILE
+// ============================================
 
-// Controle de FPS da animação da águia (apenas os frames, não o movimento)
+const MOBILE_CONFIG = {
+    // Animações
+    eagleAnimationDelay: isMobile ? 70 : 50,
+    jumpSpeed: isMobile ? 0.01 : 0.015,
+    horizontalEasing: isMobile ? 0.1 : 0.15,
+    
+    // Timer
+    timerInterval: isMobile ? 300 : 200,
+    
+    // Pontuação
+    timeBonusMax: isMobile ? 2.3 : 2.5,
+    perfectTime: isMobile ? 3.0 : 2.5,
+    
+    // Qualidade visual
+    reduceAnimations: isMobile,
+    disableParticles: isMobile,
+    canvasScale: isMobile ? 0.9 : 1.0,
+    
+    // Toque
+    tapDelay: isMobile ? 150 : 100,
+    platformFontSize: isMobile ? '24px' : '32px',
+    wordFontSize: isMobile ? '24px' : '32px'
+};
+
+// Constantes do jogo (usando as configs mobile)
+const JUMP_SPEED = MOBILE_CONFIG.jumpSpeed;
+const HORIZONTAL_EASING = MOBILE_CONFIG.horizontalEasing;
 let lastAnimationFrame = 0;
-const EAGLE_ANIMATION_DELAY = isMobile ? 40 : 50; // 120ms entre frames no mobile
+const EAGLE_ANIMATION_DELAY = MOBILE_CONFIG.eagleAnimationDelay;
+
+// ============================================
+// SISTEMA DE PONTUAÇÃO
+// ============================================
+
+const SCORE_CONFIG = {
+    BASE_POINTS: 100,           
+    STREAK_MULTIPLIER: 0.35,
+    MAX_STREAK: 5,              
+    TIME_BONUS_MIN: 1.0,
+    MAX_TIME: 12
+};
 
 const SOUND_EFFECTS = {
     correct: 'sfx/CorrectAnswer.mp3',
@@ -21,168 +59,8 @@ const SOUND_EFFECTS = {
 
 const PLATFORM_POSITIONS = [100, 250, 400];
 
-
 // ============================================
-// 2. GERAÇÃO AUTOMÁTICA DOS NÚMEROS
-// ============================================
-
-function generateNumbers_21_99() {
-    const numbers = [];
-    const units = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const tens = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-    
-    for (let t = 0; t < tens.length; t++) {
-        for (let u = 0; u < units.length; u++) {
-            numbers.push({
-                value: (t + 2) * 10 + (u + 1),
-                word: `${tens[t]}-${units[u]}`
-            });
-        }
-    }
-    return numbers;
-}
-
-function generateNumbers_101_999() {
-    const numbers = [];
-    const hundreds = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const units = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const tensList = ['ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-    
-    for (let h = 0; h < hundreds.length; h++) {
-        const hundredWord = `${hundreds[h]} hundred`;
-        numbers.push({ value: (h + 1) * 100, word: hundredWord });
-        
-        for (let u = 0; u < units.length; u++) {
-            const value = (h + 1) * 100 + (u + 1);
-            const word = `${hundredWord} ${units[u]}`;
-            numbers.push({ value, word });
-        }
-        
-        for (let s = 0; s < 10; s++) {
-            const specials = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 
-                              'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-            const value = (h + 1) * 100 + 10 + s;
-            const word = `${hundredWord} ${specials[s]}`;
-            numbers.push({ value, word });
-        }
-        
-        for (let t = 0; t < tensList.length; t++) {
-            const tenWord = tensList[t];
-            const tenValue = (t + 1) * 10;
-            
-            const valueTen = (h + 1) * 100 + tenValue;
-            const wordTen = `${hundredWord} ${tenWord}`;
-            numbers.push({ value: valueTen, word: wordTen });
-            
-            for (let u = 0; u < units.length; u++) {
-                const value = (h + 1) * 100 + tenValue + (u + 1);
-                const word = `${hundredWord} ${tenWord}-${units[u]}`;
-                numbers.push({ value, word });
-            }
-        }
-    }
-    
-    const unique = [];
-    const seen = new Set();
-    for (const num of numbers) {
-        if (!seen.has(num.value)) {
-            seen.add(num.value);
-            unique.push(num);
-        }
-    }
-    return unique;
-}
-
-function generateNumbers_1001_9999() {
-    const numbers = [];
-    const thousands = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const hundreds = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const tensList = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-    const units = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 
-                   'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-    
-    for (let th = 0; th < thousands.length; th++) {
-        const thousandWord = `${thousands[th]} thousand`;
-        numbers.push({ value: (th + 1) * 1000, word: thousandWord });
-        
-        for (let u = 0; u < units.length; u++) {
-            const value = (th + 1) * 1000 + (u + 1);
-            const word = `${thousandWord} ${units[u]}`;
-            numbers.push({ value, word });
-        }
-        
-        for (let s = 0; s < teens.length; s++) {
-            const value = (th + 1) * 1000 + 10 + s;
-            const word = `${thousandWord} ${teens[s]}`;
-            numbers.push({ value, word });
-        }
-        
-        for (let t = 0; t < tensList.length; t++) {
-            const tenWord = tensList[t];
-            const tenValue = (t + 2) * 10;
-            
-            const valueDezenaRedonda = (th + 1) * 1000 + tenValue;
-            const wordDezenaRedonda = `${thousandWord} ${tenWord}`;
-            numbers.push({ value: valueDezenaRedonda, word: wordDezenaRedonda });
-            
-            for (let u = 0; u < units.length; u++) {
-                const value = (th + 1) * 1000 + tenValue + (u + 1);
-                const word = `${thousandWord} ${tenWord}-${units[u]}`;
-                numbers.push({ value, word });
-            }
-        }
-        
-        for (let h = 0; h < hundreds.length; h++) {
-            const hundredWord = `${hundreds[h]} hundred`;
-            const hundredValue = (h + 1) * 100;
-            
-            const valueCentenaRedonda = (th + 1) * 1000 + hundredValue;
-            const wordCentenaRedonda = `${thousandWord} ${hundredWord}`;
-            numbers.push({ value: valueCentenaRedonda, word: wordCentenaRedonda });
-            
-            for (let u = 0; u < units.length; u++) {
-                const value = (th + 1) * 1000 + hundredValue + (u + 1);
-                const word = `${thousandWord} ${hundredWord} ${units[u]}`;
-                numbers.push({ value, word });
-            }
-            
-            for (let s = 0; s < teens.length; s++) {
-                const value = (th + 1) * 1000 + hundredValue + 10 + s;
-                const word = `${thousandWord} ${hundredWord} ${teens[s]}`;
-                numbers.push({ value, word });
-            }
-            
-            for (let t = 0; t < tensList.length; t++) {
-                const tenWord = tensList[t];
-                const tenValue = (t + 2) * 10;
-                
-                const valueDezenaRedonda = (th + 1) * 1000 + hundredValue + tenValue;
-                const wordDezenaRedonda = `${thousandWord} ${hundredWord} ${tenWord}`;
-                numbers.push({ value: valueDezenaRedonda, word: wordDezenaRedonda });
-                
-                for (let u = 0; u < units.length; u++) {
-                    const value = (th + 1) * 1000 + hundredValue + tenValue + (u + 1);
-                    const word = `${thousandWord} ${hundredWord} ${tenWord}-${units[u]}`;
-                    numbers.push({ value, word });
-                }
-            }
-        }
-    }
-    
-    const unique = [];
-    const seen = new Set();
-    for (const num of numbers) {
-        if (!seen.has(num.value)) {
-            seen.add(num.value);
-            unique.push(num);
-        }
-    }
-    return unique;
-}
-
-// ============================================
-// 3. GAME DATA
+// 2. GAME DATA
 // ============================================
 
 const gameData = {
@@ -192,62 +70,32 @@ const gameData = {
         { value: 7, word: 'seven' }, { value: 8, word: 'eight' }, { value: 9, word: 'nine' },
         { value: 10, word: 'ten' }
     ],
-    
     numbers11_20: [
         { value: 11, word: 'eleven' }, { value: 12, word: 'twelve' }, { value: 13, word: 'thirteen' },
         { value: 14, word: 'fourteen' }, { value: 15, word: 'fifteen' }, { value: 16, word: 'sixteen' },
         { value: 17, word: 'seventeen' }, { value: 18, word: 'eighteen' }, { value: 19, word: 'nineteen' },
         { value: 20, word: 'twenty' }
     ],
-    
     tens: [
-        { value: 10, word: 'ten' }, { value: 20, word: 'twenty' }, { value: 30, word: 'thirty' },
-        { value: 40, word: 'forty' }, { value: 50, word: 'fifty' }, { value: 60, word: 'sixty' },
-        { value: 70, word: 'seventy' }, { value: 80, word: 'eighty' }, { value: 90, word: 'ninety' },
-        { value: 100, word: 'one hundred' }
+        { value: 20, word: 'twenty' }, { value: 30, word: 'thirty' }, { value: 40, word: 'forty' },
+        { value: 50, word: 'fifty' }, { value: 60, word: 'sixty' }, { value: 70, word: 'seventy' },
+        { value: 80, word: 'eighty' }, { value: 90, word: 'ninety' }
     ],
-    
     hundreds: [
         { value: 100, word: 'one hundred' }, { value: 200, word: 'two hundred' },
         { value: 300, word: 'three hundred' }, { value: 400, word: 'four hundred' },
         { value: 500, word: 'five hundred' }, { value: 600, word: 'six hundred' },
         { value: 700, word: 'seven hundred' }, { value: 800, word: 'eight hundred' },
-        { value: 900, word: 'nine hundred' }, { value: 1000, word: 'one thousand' }
+        { value: 900, word: 'nine hundred' }
     ],
-    
-    random21_99: generateNumbers_21_99(),
-    random101_999: generateNumbers_101_999(),
-    random1001_9999: generateNumbers_1001_9999(),
+    random21_99: [],
+    random101_999: [],
+    random1001_9999: [],
     mixedAdvanced: []
 };
 
-function generateMixedAdvanced() {
-    const categories = [
-        gameData.random21_99, gameData.random101_999, gameData.random1001_9999,
-        gameData.numbers, gameData.numbers11_20, gameData.tens, gameData.hundreds
-    ];
-    
-    const mixed = [];
-    for (let cat of categories) {
-        const shuffled = [...cat];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        mixed.push(...shuffled.slice(0, 10));
-    }
-    
-    for (let i = mixed.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
-    }
-    return mixed;
-}
-
-gameData.mixedAdvanced = generateMixedAdvanced();
-
 // ============================================
-// 4. VARIÁVEIS DE ESTADO
+// 3. VARIÁVEIS DE ESTADO
 // ============================================
 
 let currentGame = 'numbers';
@@ -255,34 +103,29 @@ let currentNumbers = [];
 let currentNumber = null;
 let score = 0;
 let highScores = {
-    numbers: 0,
-    numbers11_20: 0,
-    tens: 0,
-    hundreds: 0,
-    random21_99: 0,
-    random101_999: 0,
-    random1001_9999: 0,
-    mixedAdvanced: 0
+    numbers: 0, numbers11_20: 0, tens: 0, hundreds: 0,
+    random21_99: 0, random101_999: 0, random1001_9999: 0, mixedAdvanced: 0
 };
 
 let lives = 3, streak = 0, multiplier = 1, answered = false, availableNumbers = [];
 let audioPlayer = null, isAudioMuted = false, gameActive = false, gameEnded = false;
 
 // ============================================
-// 5. EAGLE ANIMAÇÃO
+// 4. EAGLE ANIMAÇÃO
 // ============================================
 
 let eagleX = 250, eagleY = 200, eagleTargetX = 250, isJumping = false, jumpProgress = 0, eagleDirection = -1;
-let currentAnimation = 'idle', animationFrame = 0, frameCounter = 0, isAnimating = false;
+let currentAnimation = 'idle', animationFrame = 0, isAnimating = false;
 
 // ============================================
-// 6. TIMER
+// 5. TIMER
 // ============================================
 
 let startTime = null, endTime = null, timerInterval = null, currentTime = 0;
+let roundStartTime = 0;
 
 // ============================================
-// 7. DOM ELEMENTS
+// 6. DOM ELEMENTS
 // ============================================
 
 const DOM = {
@@ -306,7 +149,7 @@ const DOM = {
 };
 
 // ============================================
-// 8. IMAGENS
+// 7. IMAGENS
 // ============================================
 
 let eagleImages = { idle: null, flap: [], celebrate: [], wrong: [] };
@@ -316,10 +159,12 @@ function loadImages() {
     console.log('Loading images...');
     
     eagleImages.idle = new Image();
-    eagleImages.idle.src = 'images/eagle_idle_01.png';
+    eagleImages.idle.src = 'images/flap_01.png';
+    eagleImages.idle.onload = () => console.log('✅ Idle image loaded');
+    eagleImages.idle.onerror = () => console.error('❌ Failed: images/flap_01.png');
     
     menuEagleImage = new Image();
-    menuEagleImage.src = 'images/eagle_idle_01.png';
+    menuEagleImage.src = 'images/flap_01.png';
     menuEagleImage.onload = () => {
         const menuEagle = document.querySelector('.eagle-menu-icon');
         if (menuEagle) {
@@ -331,219 +176,182 @@ function loadImages() {
             img.style.objectFit = 'contain';
             menuEagle.appendChild(img);
         }
+        console.log('✅ Menu eagle image loaded');
     };
+    menuEagleImage.onerror = () => console.error('❌ Failed to load menu eagle');
     
     for (let i = 1; i <= 18; i++) {
         const img = new Image();
-        img.src = `images/flap_${i.toString().padStart(2, '0')}.png`;
+        const num = i.toString().padStart(2, '0');
+        img.src = `images/flap_${num}.png`;
+        img.onerror = () => console.error(`❌ Failed: images/flap_${num}.png`);
         eagleImages.flap.push(img);
     }
     
     for (let i = 1; i <= 11; i++) {
         const img = new Image();
-        img.src = `images/eagle_center_${i.toString().padStart(2, '0')}.png`;
+        const num = i.toString().padStart(2, '0');
+        img.src = `images/eagle_center_${num}.png`;
+        img.onerror = () => console.error(`❌ Failed: images/eagle_center_${num}.png`);
         eagleImages.celebrate.push(img);
     }
     
     for (let i = 1; i <= 19; i++) {
         const img = new Image();
-        img.src = `images/eagle_wrong_${i.toString().padStart(2, '0')}.png`;
+        const num = i.toString().padStart(2, '0');
+        img.src = `images/eagle_wrong_${num}.png`;
+        img.onerror = () => console.error(`❌ Failed: images/eagle_wrong_${num}.png`);
         eagleImages.wrong.push(img);
     }
+    
+    console.log('All images loading started...');
 }
 
 // ============================================
-// 9. FUNÇÕES DE SCORE COM FIREBASE
+// 7.5. SISTEMA DE PONTUAÇÃO
 // ============================================
 
-function saveUserScoresToFirebase() {
-    if (!window.currentUser || window.isGuest) return;
+function calculateRoundScore() {
+    let points = SCORE_CONFIG.BASE_POINTS;
     
-    const userScores = {
-        numbers: highScores.numbers,
-        numbers11_20: highScores.numbers11_20,
-        tens: highScores.tens,
-        hundreds: highScores.hundreds,
-        random21_99: highScores.random21_99,
-        random101_999: highScores.random101_999,
-        random1001_9999: highScores.random1001_9999,
-        mixedAdvanced: highScores.mixedAdvanced,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
+    const streakBonus = Math.min(streak, SCORE_CONFIG.MAX_STREAK) * SCORE_CONFIG.STREAK_MULTIPLIER;
+    points = Math.floor(points * (1 + streakBonus));
     
-    db.collection('users').doc(window.currentUser.uid).collection('scores').doc('highScores').set(userScores)
-        .then(() => console.log("✅ Scores saved to Firebase"))
-        .catch(err => console.error("❌ Error saving scores:", err));
-}
-
-function loadUserScoresFromFirebase() {
-    return new Promise((resolve, reject) => {
-        if (!window.currentUser || window.isGuest) {
-            resolve();
-            return;
-        }
-        
-        console.log("📥 Loading scores from Firebase for user:", window.currentUser.uid);
-        
-        db.collection('users').doc(window.currentUser.uid).collection('scores').doc('highScores').get()
-            .then((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    highScores = {
-                        numbers: data.numbers || 0,
-                        numbers11_20: data.numbers11_20 || 0,
-                        tens: data.tens || 0,
-                        hundreds: data.hundreds || 0,
-                        random21_99: data.random21_99 || 0,
-                        random101_999: data.random101_999 || 0,
-                        random1001_9999: data.random1001_9999 || 0,
-                        mixedAdvanced: data.mixedAdvanced || 0
-                    };
-                    console.log("✅ Scores loaded from Firebase:", highScores);
-                } else {
-                    console.log("🆕 New user - scores are ZERO");
-                }
-                
-                if (DOM.highScore) DOM.highScore.textContent = highScores[currentGame] || 0;
-                resolve();
-            })
-            .catch(err => {
-                console.error("❌ Error loading scores:", err);
-                reject(err);
-            });
-    });
-}
-
-// ============================================
-// 10. FUNÇÕES DO LEADERBOARD
-// ============================================
-
-function getGameModeName(gameMode) {
-    const names = {
-        'numbers': 'Numbers 1-10',
-        'numbers11-20': 'Numbers 11-20',
-        'tens': 'Tens',
-        'hundreds': 'Hundreds',
-        'random21_99': '21-99',
-        'random101_999': '101-999',
-        'random1001_9999': '1,001-9,999',
-        'mixedAdvanced': 'Mixed Advanced'
-    };
-    return names[gameMode] || gameMode;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function saveToLeaderboard(gameMode, score, playerName) {
-    if (!playerName || playerName.trim() === "") return;
+    const roundTime = (Date.now() - roundStartTime) / 1000;
+    let timeBonus = 1.0;
     
-    const leaderboardRef = db.collection('leaderboards').doc(gameMode).collection('scores');
+    const timeBonusMax = MOBILE_CONFIG.timeBonusMax;
+    const perfectTime = MOBILE_CONFIG.perfectTime;
     
-    leaderboardRef.add({
-        name: playerName.trim(),
-        score: score,
-        date: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        console.log(`✅ Score ${score} saved to ${gameMode} leaderboard`);
-    }).catch(err => {
-        console.error("❌ Error saving to leaderboard:", err);
-    });
-}
-
-async function loadLeaderboard(gameMode) {
-    const leaderboardRef = db.collection('leaderboards').doc(gameMode).collection('scores');
-    
-    try {
-        const snapshot = await leaderboardRef
-            .orderBy('score', 'desc')
-            .limit(20)
-            .get();
-        
-        const scores = [];
-        snapshot.forEach(doc => {
-            scores.push(doc.data());
-        });
-        return scores;
-    } catch (err) {
-        console.error("❌ Error loading leaderboard:", err);
-        return [];
+    if (roundTime <= perfectTime) {
+        timeBonus = timeBonusMax;
+    } else if (roundTime <= SCORE_CONFIG.MAX_TIME) {
+        const timeFactor = (SCORE_CONFIG.MAX_TIME - roundTime) / (SCORE_CONFIG.MAX_TIME - perfectTime);
+        timeBonus = 1.0 + (timeFactor * (timeBonusMax - 1.0));
+        timeBonus = Math.min(timeBonusMax, Math.max(SCORE_CONFIG.TIME_BONUS_MIN, timeBonus));
     }
+    
+    points = Math.floor(points * timeBonus);
+    
+    return {
+        base: SCORE_CONFIG.BASE_POINTS,
+        streakBonus: streakBonus,
+        streakMultiplier: (1 + streakBonus),
+        timeBonus: timeBonus,
+        total: points,
+        time: roundTime
+    };
 }
 
-function showNameEntryModal(score, gameMode) {
-    console.log("🎯 showNameEntryModal CHAMADA! Score:", score, "GameMode:", gameMode);
+function showScorePopup(points, timeBonus) {
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
     
-    // Remover modal existente
-    const existingModal = document.querySelector('.name-entry-modal');
-    if (existingModal) existingModal.remove();
+    let bonusText = '';
+    if (timeBonus > 1.8) {
+        bonusText = '✨ EXCELLENT! ✨';
+    } else if (timeBonus > 1.5) {
+        bonusText = '🎯 GREAT! 🎯';
+    } else if (timeBonus > 1.2) {
+        bonusText = '👍 GOOD! 👍';
+    } else {
+        bonusText = '💪 KEEP GOING! 💪';
+    }
     
-    // Criar o modal
-    const modal = document.createElement('div');
-    modal.className = 'name-entry-modal';
-    modal.style.zIndex = '10000';
-    modal.innerHTML = `
-        <div class="name-entry-content">
-            <h3>🏆 NEW HIGH SCORE! 🏆</h3>
-            <p>You scored <strong style="color:#c9a13b; font-size:1.2rem;">${score}</strong> points in <strong>${getGameModeName(gameMode)}</strong></p>
-            <p>Enter your name for the global leaderboard:</p>
-            <input type="text" id="player-name-input" class="name-input" placeholder="Your name" maxlength="20">
-            <div class="name-entry-buttons">
-                <button id="submit-name-btn" class="name-entry-btn submit">SUBMIT</button>
-                <button id="skip-name-btn" class="name-entry-btn skip">SKIP</button>
-            </div>
-        </div>
+    const fontSize = isMobile ? '1.1rem' : '1.3rem';
+    const padding = isMobile ? '8px 16px' : '12px 24px';
+    
+    popup.innerHTML = `
+        <span class="points" style="font-size: ${fontSize}">+${points}</span>
+        <span class="bonus-message" style="font-size: ${fontSize}">${bonusText}</span>
     `;
     
-    document.body.appendChild(modal);
-    console.log("✅ Modal adicionado ao DOM");
+    popup.style.position = 'fixed';
+    popup.style.top = '40%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.background = '#c9a13b';
+    popup.style.color = '#1e3c5c';
+    popup.style.padding = padding;
+    popup.style.borderRadius = '50px';
+    popup.style.fontWeight = 'bold';
+    popup.style.zIndex = '1000';
+    popup.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+    popup.style.border = '2px solid white';
+    popup.style.display = 'flex';
+    popup.style.flexDirection = 'column';
+    popup.style.alignItems = 'center';
+    popup.style.gap = '3px';
+    popup.style.animation = 'floatUp 0.8s ease-out forwards';
     
-    // Focar no input
-    setTimeout(() => {
-        const nameInput = document.getElementById('player-name-input');
-        if (nameInput) nameInput.focus();
-    }, 200);
-    
-    // Botão Submit
-    const submitBtn = document.getElementById('submit-name-btn');
-    if (submitBtn) {
-        submitBtn.onclick = () => {
-            const name = document.getElementById('player-name-input')?.value;
-            if (name && name.trim()) {
-                console.log("💾 Salvando no leaderboard:", name, score, gameMode);
-                saveToLeaderboard(gameMode, score, name);
-            }
-            modal.remove();
-        };
-    }
-    
-    // Botão Skip
-    const skipBtn = document.getElementById('skip-name-btn');
-    if (skipBtn) {
-        skipBtn.onclick = () => {
-            console.log("Usuário pulou o leaderboard");
-            modal.remove();
-        };
-    }
-    
-    // Enter key
-    const nameInput = document.getElementById('player-name-input');
-    if (nameInput) {
-        nameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const name = e.target.value;
-                if (name && name.trim()) {
-                    console.log("💾 Salvando no leaderboard (Enter):", name, score, gameMode);
-                    saveToLeaderboard(gameMode, score, name);
-                }
-                modal.remove();
-            }
-        });
-    }
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 800);
 }
+
+function showWrongPopup() {
+    const popup = document.createElement('div');
+    popup.innerHTML = `❌ WRONG!`;
+    popup.style.position = 'fixed';
+    popup.style.top = '40%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.background = '#ef4444';
+    popup.style.color = 'white';
+    popup.style.padding = '12px 24px';
+    popup.style.borderRadius = '50px';
+    popup.style.fontWeight = 'bold';
+    popup.style.fontSize = '1.3rem';
+    popup.style.zIndex = '1000';
+    popup.style.animation = 'floatUp 0.8s ease-out forwards';
+    
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 800);
+}
+
+// ============================================
+// 8. ÁUDIO
+// ============================================
+
+function playSound(type) { 
+    if (isAudioMuted) return;
+    const audio = new Audio(SOUND_EFFECTS[type]);
+    audio.play().catch(e => console.log('Sound error:', e));
+}
+
+function playAudio() {
+    console.log("🔊 PLAY AUDIO CHAMADO!");
+    
+    if (!currentNumber) {
+        console.log("❌ currentNumber é null");
+        return;
+    }
+    if (isAudioMuted) {
+        console.log("🔇 Áudio mutado");
+        return;
+    }
+    if (!gameActive) {
+        console.log("⏸️ Jogo não ativo");
+        return;
+    }
+    
+    if (audioPlayer) { 
+        audioPlayer.pause(); 
+        audioPlayer.currentTime = 0; 
+    }
+    
+    let nomeArquivo = currentNumber.word.toLowerCase();
+    console.log(`📁 Tentando: audio/${nomeArquivo}.mp3`);
+    
+    audioPlayer = new Audio(`audio/${nomeArquivo}.mp3`);
+    
+    audioPlayer.play()
+        .then(() => console.log(`✅ Tocou: ${nomeArquivo}.mp3`))
+        .catch(err => console.log(`❌ Erro: ${nomeArquivo}.mp3 -`, err.message));
+}
+
+// ============================================
+// 9. FUNÇÕES DO LEADERBOARD
+// ============================================
 
 async function showLeaderboardModal() {
     const existingModal = document.querySelector('.leaderboard-modal');
@@ -591,19 +399,22 @@ async function showLeaderboardModal() {
         tabsContainer.appendChild(btn);
     });
     
-    async function loadLeaderboardForMode(modeId) {
+    function loadLeaderboardForMode(modeId) {
         const listContainer = document.getElementById('leaderboard-list');
         listContainer.innerHTML = '<div class="leaderboard-empty">Loading...</div>';
         
-        const scores = await loadLeaderboard(modeId);
+        const leaderboardKey = `leaderboard_${modeId}`;
+        const scores = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
         
         if (scores.length === 0) {
             listContainer.innerHTML = '<div class="leaderboard-empty">No scores yet. Be the first!</div>';
             return;
         }
         
+        scores.sort((a, b) => b.score - a.score);
+        
         listContainer.innerHTML = '';
-        scores.forEach((score, index) => {
+        scores.slice(0, 20).forEach((score, index) => {
             const item = document.createElement('div');
             item.className = 'leaderboard-item';
             item.innerHTML = `
@@ -620,45 +431,105 @@ async function showLeaderboardModal() {
     modal.querySelector('.close-modal').onclick = () => modal.remove();
 }
 
-// ============================================
-// 11. FUNÇÕES PRINCIPAIS DO JOGO
-// ============================================
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-function initGame() {
-    console.log('Game starting...');
+function showNameEntryModal(score, gameMode) {
+    console.log("🎯 Vitória! Score:", score, "GameMode:", gameMode);
     
-    DOM.canvas.width = 500;
-    DOM.canvas.height = 250;
-    loadImages();
-    audioPlayer = new Audio();
+    const existingModal = document.querySelector('.name-entry-modal');
+    if (existingModal) existingModal.remove();
     
-    DOM.menuButton?.addEventListener('click', showMenu);
-    DOM.speakerToggle?.addEventListener('click', toggleAudio);
-    DOM.startButton?.addEventListener('click', startGame);
-    DOM.platforms.forEach(p => p.addEventListener('click', handlePlatformClick));
+    const modal = document.createElement('div');
+    modal.className = 'name-entry-modal';
+    modal.innerHTML = `
+        <div class="name-entry-content">
+            <h3>🏆 YOU WIN! 🏆</h3>
+            <p>You scored <strong style="color:#c9a13b; font-size:1.8rem;">${score}</strong> points</p>
+            <p>Enter your name for the global leaderboard:</p>
+            <input type="text" id="player-name-input" class="name-input" placeholder="Your name" maxlength="20">
+            <div class="name-entry-buttons">
+                <button id="submit-name-btn" class="name-entry-btn submit">SUBMIT</button>
+                <button id="skip-name-btn" class="name-entry-btn skip">SKIP</button>
+            </div>
+        </div>
+    `;
     
-  const leaderboardBtn = document.getElementById('global-rankings-btn');
-if (leaderboardBtn) {
-    leaderboardBtn.addEventListener('click', () => {
-        console.log("Botão Rankings clicado!");
-        showLeaderboardModal(); // sua função que abre o modal
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        const nameInput = document.getElementById('player-name-input');
+        if (nameInput) nameInput.focus();
+    }, 100);
+    
+    const submitBtn = document.getElementById('submit-name-btn');
+    if (submitBtn) {
+        submitBtn.onclick = () => {
+            const name = document.getElementById('player-name-input')?.value;
+            const finalName = (name && name.trim()) ? name.trim() : "Anonymous";
+            console.log("💾 Salvando no leaderboard:", finalName, score, gameMode);
+            saveToLeaderboard(gameMode, score, finalName);
+            modal.remove();
+        };
+    }
+    
+    const skipBtn = document.getElementById('skip-name-btn');
+    if (skipBtn) {
+        skipBtn.onclick = () => {
+            console.log("Usuário pulou o leaderboard");
+            modal.remove();
+        };
+    }
+    
+    const nameInput = document.getElementById('player-name-input');
+    if (nameInput) {
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const name = e.target.value;
+                const finalName = (name && name.trim()) ? name.trim() : "Anonymous";
+                console.log("💾 Salvando no leaderboard (Enter):", finalName, score, gameMode);
+                saveToLeaderboard(gameMode, score, finalName);
+                modal.remove();
+            }
+        });
+    }
+}
+
+function saveToLeaderboard(gameMode, score, playerName) {
+    if (!playerName || playerName.trim() === "") return;
+    
+    console.log(`🏆 Saving to leaderboard: ${playerName} - ${score} points in ${gameMode}`);
+    
+    const leaderboardKey = `leaderboard_${gameMode}`;
+    let leaderboard = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
+    
+    leaderboard.push({
+        name: playerName,
+        score: score,
+        date: new Date().toISOString()
     });
-}
     
-    animate();
+    leaderboard.sort((a, b) => b.score - a.score);
+    
+    if (leaderboard.length > 50) leaderboard = leaderboard.slice(0, 50);
+    
+    localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
+    console.log(`✅ Saved! Total entries: ${leaderboard.length}`);
 }
+
+// ============================================
+// 10. ANIMAÇÃO DA ÁGUIA
+// ============================================
 
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Movimento da águia continua suave (sem limitação)
     updateEagleMovement();
-    
-    // Desenha a águia a cada frame
     drawEagle();
 }
 
-// Movimento da águia (suave, sem limitação)
 function updateEagleMovement() {
     if (isJumping) {
         jumpProgress += JUMP_SPEED;
@@ -674,10 +545,7 @@ function updateEagleMovement() {
             if (currentAnimation !== 'flap') startAnimation('flap');
         }
     }
-}
-
-// Atualização dos frames da animação (limitada para economizar CPU)
-function updateEagleAnimationFrames() {
+    
     const now = Date.now();
     if (now - lastAnimationFrame >= EAGLE_ANIMATION_DELAY) {
         lastAnimationFrame = now;
@@ -699,19 +567,24 @@ function updateEagleAnimationFrames() {
     }
 }
 
-// Chamar updateAnimationFrames dentro do drawEagle ou no animate
 function drawEagle() {
-    // Atualizar frames da animação (limitado)
-    updateEagleAnimationFrames();
+    if (!DOM.ctx) return;
     
     DOM.ctx.clearRect(0, 0, 500, 250);
     
     let img = eagleImages.idle;
-    if (currentAnimation === 'flap' && eagleImages.flap[animationFrame]?.complete) img = eagleImages.flap[animationFrame];
-    else if (currentAnimation === 'celebrate' && eagleImages.celebrate[animationFrame]?.complete) img = eagleImages.celebrate[animationFrame];
-    else if (currentAnimation === 'wrong' && eagleImages.wrong[animationFrame]?.complete) img = eagleImages.wrong[animationFrame];
     
-    if (img?.complete && img.naturalHeight > 0) {
+    if (currentAnimation === 'flap' && eagleImages.flap[animationFrame]) {
+        img = eagleImages.flap[animationFrame];
+    }
+    else if (currentAnimation === 'celebrate' && eagleImages.celebrate[animationFrame]) {
+        img = eagleImages.celebrate[animationFrame];
+    }
+    else if (currentAnimation === 'wrong' && eagleImages.wrong[animationFrame]) {
+        img = eagleImages.wrong[animationFrame];
+    }
+    
+    if (img && img.complete && img.naturalHeight > 0) {
         DOM.ctx.save();
         DOM.ctx.translate(eagleX, eagleY);
         if (eagleDirection === 1) DOM.ctx.scale(-1, 1);
@@ -720,28 +593,69 @@ function drawEagle() {
         let size = currentAnimation === 'flap' ? 165 : 150;
         DOM.ctx.drawImage(img, -size/2, -size, size, size);
         DOM.ctx.restore();
+    } else {
+        DOM.ctx.fillStyle = '#c9a13b';
+        DOM.ctx.beginPath();
+        DOM.ctx.arc(eagleX, eagleY, 30, 0, Math.PI * 2);
+        DOM.ctx.fill();
+        DOM.ctx.fillStyle = '#1e3c5c';
+        DOM.ctx.font = '30px sans-serif';
+        DOM.ctx.fillText('🦅', eagleX - 18, eagleY + 12);
     }
 }
 
+function startAnimation(type) { 
+    currentAnimation = type; 
+    animationFrame = 0; 
+    isAnimating = true; 
+    lastAnimationFrame = Date.now();
+}
 
-function startAnimation(type) { currentAnimation = type; animationFrame = 0; frameCounter = 0; isAnimating = true; }
-function stopAnimation() { currentAnimation = 'idle'; animationFrame = 0; isAnimating = false; }
-function jumpToPlatform(idx) { eagleTargetX = PLATFORM_POSITIONS[idx]; isJumping = true; jumpProgress = 0; eagleDirection = eagleTargetX > eagleX ? 1 : -1; }
-function resetEagle() { eagleX = 250; eagleY = 200; isJumping = false; jumpProgress = 0; currentAnimation = 'idle'; animationFrame = 0; isAnimating = false; eagleDirection = -1; }
+function stopAnimation() { 
+    currentAnimation = 'idle'; 
+    animationFrame = 0; 
+    isAnimating = false; 
+}
+
+function jumpToPlatform(idx) { 
+    eagleTargetX = PLATFORM_POSITIONS[idx]; 
+    isJumping = true; 
+    jumpProgress = 0; 
+    eagleDirection = eagleTargetX > eagleX ? 1 : -1; 
+}
+
+function resetEagle() { 
+    eagleX = 250; 
+    eagleY = 200; 
+    isJumping = false; 
+    jumpProgress = 0; 
+    currentAnimation = 'idle'; 
+    animationFrame = 0; 
+    isAnimating = false; 
+    eagleDirection = -1; 
+}
+
+// ============================================
+// 11. GAME MECÂNICAS
+// ============================================
 
 function handlePlatformClick(e) {
     const btn = e.currentTarget, idx = parseInt(btn.dataset.index);
     if (!gameActive || answered || !currentNumber) return;
     
     if (parseInt(btn.dataset.value) === currentNumber.value) {
-        btn.classList.add('correct');
+        const roundScore = calculateRoundScore();
         streak++;
-        multiplier = Math.min(streak, 5);
-        score += 50 * multiplier;
+        multiplier = Math.min(streak, SCORE_CONFIG.MAX_STREAK);
+        score += roundScore.total;
+        
+        btn.classList.add('correct');
         updateScore();
         updateMultiplier();
         updateHighScore();
         playSound('correct');
+        
+        showScorePopup(roundScore.total, roundScore.timeBonus);
         
         answered = true;
         DOM.platforms.forEach(p => p.disabled = true);
@@ -756,13 +670,10 @@ function handlePlatformClick(e) {
         playSound('wrong');
         startAnimation('wrong');
         loseLife();
+        showWrongPopup();
         setTimeout(() => btn.classList.remove('wrong'), 300);
     }
 }
-
-// ============================================
-// 12. GAME FLOW FUNCTIONS
-// ============================================
 
 function startTimer() {
     startTime = Date.now();
@@ -775,13 +686,20 @@ function startTimer() {
                 DOM.timer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }
         }
-    }, 100);
+    }, MOBILE_CONFIG.timerInterval);
 }
 
-function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } endTime = currentTime; }
+function stopTimer() { 
+    if (timerInterval) { 
+        clearInterval(timerInterval); 
+        timerInterval = null; 
+    } 
+    endTime = currentTime; 
+}
 
 function updateMultiplier() { if (DOM.multiplier) DOM.multiplier.textContent = `${multiplier}x`; }
 function updateScore() { if (DOM.score) DOM.score.textContent = score; }
+
 function updateLives() {
     if (!DOM.lives) return;
     DOM.lives.innerHTML = '';
@@ -795,63 +713,46 @@ function updateLives() {
 function updateHighScore() {
     if (score > highScores[currentGame]) {
         highScores[currentGame] = score;
-        
-        if (window.currentUser && !window.isGuest) {
-            saveUserScoresToFirebase();
-        }
-        
         if (DOM.highScore) DOM.highScore.textContent = score;
-        
-        const msg = document.createElement('div');
-        msg.textContent = '🏆 NEW HIGH SCORE!';
-        msg.style.position = 'fixed';
-        msg.style.top = '50%';
-        msg.style.left = '50%';
-        msg.style.transform = 'translate(-50%, -50%)';
-        msg.style.background = '#c9a13b';
-        msg.style.color = '#1e3c5c';
-        msg.style.padding = '1rem 2rem';
-        msg.style.borderRadius = '50px';
-        msg.style.fontWeight = 'bold';
-        msg.style.zIndex = '1000';
-        document.body.appendChild(msg);
-        setTimeout(() => msg.remove(), 2000);
     }
-}
-
-function playSound(type) { if (isAudioMuted) return; new Audio(SOUND_EFFECTS[type]).play().catch(() => {}); }
-
-function playAudio() {
-    if (!currentNumber || isAudioMuted || !gameActive) return;
-    if (audioPlayer) { audioPlayer.pause(); audioPlayer.currentTime = 0; }
-    
-    let nomeArquivo = currentNumber.word.toLowerCase();
-    console.log(`🔊 Tocando: ${nomeArquivo}.mp3`);
-    audioPlayer.src = `audio/${nomeArquivo}.mp3`;
-    
-    audioPlayer.play().catch(() => {
-        if ('speechSynthesis' in window) {
-            let utter = new SpeechSynthesisUtterance(currentNumber.word);
-            utter.lang = 'en-US';
-            window.speechSynthesis.speak(utter);
-        }
-    });
 }
 
 function gameOver() {
     if (gameEnded) return;
-    gameActive = false; gameEnded = true; stopTimer();
+    gameActive = false; 
+    gameEnded = true; 
+    stopTimer();
     playSound('gameOver');
     DOM.platforms.forEach(p => p.disabled = true);
-    setTimeout(() => { if (DOM.wordDisplay) DOM.wordDisplay.textContent = 'GAME OVER'; addRestartButton(); }, 1000);
+    setTimeout(() => { 
+        if (DOM.wordDisplay) DOM.wordDisplay.textContent = 'GAME OVER'; 
+        addRestartButton(); 
+    }, 1000);
 }
 
 function winGame() {
     if (gameEnded) return;
     
-    const bonus = calculateSpeedBonus();
-    const bonusPoints = Math.round(score * (bonus - 1));
-    const finalScore = score + bonusPoints;
+    const totalGameTime = endTime || currentTime;
+    let speedBonus = 1.0;
+    
+    if (totalGameTime <= 22) {
+        speedBonus = 2.4;
+    } else if (totalGameTime <= 30) {
+        speedBonus = 2.2;
+    } else if (totalGameTime <= 45) {
+        speedBonus = 1.8;
+    } else if (totalGameTime <= 65) {
+        speedBonus = 1.5;
+    } else if (totalGameTime <= 90) {
+        speedBonus = 1.2;
+    } else {
+        speedBonus = 1.0;
+    }
+    
+    const lifeBonus = 1 + (lives * 0.2);
+    const finalScore = Math.floor(score * speedBonus * lifeBonus);
+    const bonusPoints = finalScore - score;
     
     gameActive = false;
     gameEnded = true;
@@ -860,19 +761,27 @@ function winGame() {
     
     DOM.platforms.forEach(p => p.disabled = true);
     
-    // SEMPRE mostra o modal para salvar a pontuação (qualquer vitória)
+    showWinWithBonusDetails(speedBonus, lifeBonus, bonusPoints, finalScore, totalGameTime);
+    
     setTimeout(() => {
         showNameEntryModal(finalScore, currentGame);
-    }, 500);
-    
-    showWinWithBonus();
+    }, 800);
 }
 
-function loseLife() { if (lives > 0) { lives--; updateLives(); if (lives === 0) gameOver(); } }
+function loseLife() { 
+    if (lives > 0) { 
+        lives--; 
+        updateLives(); 
+        if (lives === 0) gameOver(); 
+    } 
+}
 
 function nextRound() {
     if (!gameActive) return;
-    if (availableNumbers.length === 0) { winGame(); return; }
+    if (availableNumbers.length === 0) { 
+        winGame(); 
+        return; 
+    }
     
     const rand = Math.floor(Math.random() * availableNumbers.length);
     currentNumber = availableNumbers[rand];
@@ -880,9 +789,16 @@ function nextRound() {
     if (DOM.wordDisplay) DOM.wordDisplay.textContent = currentNumber.word;
     setupPlatforms();
     answered = false;
-    currentAnimation = 'idle'; animationFrame = 0; isAnimating = false;
-    DOM.platforms.forEach(p => { p.classList.remove('correct', 'wrong'); p.disabled = false; });
-    setTimeout(playAudio, 100);
+    currentAnimation = 'idle'; 
+    animationFrame = 0; 
+    isAnimating = false;
+    DOM.platforms.forEach(p => { 
+        p.classList.remove('correct', 'wrong'); 
+        p.disabled = false; 
+    });
+    
+    roundStartTime = Date.now();
+    setTimeout(playAudio, MOBILE_CONFIG.tapDelay);
 }
 
 function setupPlatforms() {
@@ -909,55 +825,53 @@ function setupPlatforms() {
     });
 }
 
-function calculateSpeedBonus() { return endTime <= 0 ? 1 : Math.min(5, Math.max(1, Math.round(5 * (15 / endTime) * 100) / 100)); }
-function getTimeBonusTitle(bonus) {
-    if (bonus >= 4.5) return "🏆 WORLD RECORD!";
-    if (bonus >= 3.5) return "⚡ AMAZING!";
-    if (bonus >= 2.5) return "🔥 GREAT!";
-    if (bonus >= 1.8) return "✨ GOOD!";
-    if (bonus >= 1.3) return "👍 DECENT!";
-    return "👌 OKAY!";
-}
-
-function showWinWithBonus() {
-    let bonus = calculateSpeedBonus();
-    let bonusPoints = Math.round(score * (bonus - 1));
-    let total = score + bonusPoints;
-    let title = getTimeBonusTitle(bonus);
-    
+function showWinWithBonusDetails(speedBonus, lifeBonus, bonusPoints, finalScore, totalGameTime) {
     let winScreen = document.createElement('div');
     winScreen.className = 'win-screen';
+    
+    const mins = Math.floor(totalGameTime / 60);
+    const secs = totalGameTime % 60;
+    const timeFormatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
     winScreen.innerHTML = `
         <h2>🎉 YOU WIN! 🎉</h2>
         <div class="win-stats">
-            <p class="time-title">${title}</p>
-            <p>⏱️ Time: ${DOM.timer.textContent}</p>
-            <p>💰 Base: ${score}</p>
-            <p>⚡ Bonus: ${bonus}x</p>
-            <p class="bonus-points">✨ +${bonusPoints}</p>
-            <p class="total-score">🏆 TOTAL: ${total}</p>
+            <p>⏱️ Time: ${timeFormatted}</p>
+            <p>💰 Base Score: ${score}</p>
+            <p>⚡ Speed Bonus: ${speedBonus.toFixed(1)}x</p>
+            <p>❤️ Lives Bonus: ${lifeBonus.toFixed(1)}x (${lives} lives left)</p>
+            <p class="bonus-points">✨ Bonus Points: +${bonusPoints}</p>
+            <p class="total-score">🏆 TOTAL: ${finalScore}</p>
         </div>
         <button class="restart-btn">PLAY AGAIN</button>
     `;
     
-    if (total > highScores[currentGame]) {
-        highScores[currentGame] = total;
-        localStorage.setItem(`highScore_${currentGame}`, total);
-        DOM.highScore.textContent = total;
-        if (window.currentUser && !window.isGuest) saveUserScoresToFirebase();
-    }
-    
     DOM.game.appendChild(winScreen);
-    winScreen.querySelector('.restart-btn').addEventListener('click', () => { winScreen.remove(); removeRestartButton(); showMenu(); });
+    winScreen.querySelector('.restart-btn').addEventListener('click', () => { 
+        winScreen.remove(); 
+        removeRestartButton(); 
+        showMenu(); 
+    });
 }
 
 function showMenu() {
-    gameActive = false; stopTimer(); removeWinScreen(); removeRestartButton(); resetEagle();
-    DOM.platforms.forEach(p => { p.textContent = '?'; p.disabled = true; p.classList.remove('correct', 'wrong'); });
+    gameActive = false; 
+    stopTimer(); 
+    removeWinScreen(); 
+    removeRestartButton(); 
+    resetEagle();
+    DOM.platforms.forEach(p => { 
+        p.textContent = '?'; 
+        p.disabled = true; 
+        p.classList.remove('correct', 'wrong'); 
+    });
     if (DOM.wordDisplay) DOM.wordDisplay.textContent = 'Ready?';
     if (DOM.instructions) DOM.instructions.textContent = '👆 Click START to begin';
     if (DOM.gameStats) DOM.gameStats.style.display = 'none';
-    if (DOM.startButton) { DOM.startButton.style.display = 'block'; DOM.startButton.disabled = false; }
+    if (DOM.startButton) { 
+        DOM.startButton.style.display = 'block'; 
+        DOM.startButton.disabled = false; 
+    }
     DOM.game.classList.remove('game-active');
     DOM.menu.style.display = 'block';
     DOM.game.style.display = 'none';
@@ -965,18 +879,18 @@ function showMenu() {
 
 function removeRestartButton() { document.querySelector('.restart-btn')?.remove(); }
 function removeWinScreen() { document.querySelector('.win-screen')?.remove(); }
+
 function addRestartButton() {
-    removeRestartButton(); removeWinScreen();
+    removeRestartButton(); 
+    removeWinScreen();
     let btn = document.createElement('button');
     btn.className = 'restart-btn';
     btn.textContent = 'PLAY AGAIN';
-    btn.addEventListener('click', () => { btn.remove(); showMenu(); });
+    btn.addEventListener('click', () => { 
+        btn.remove(); 
+        showMenu(); 
+    });
     DOM.game.appendChild(btn);
-}
-
-function toggleAudio() {
-    isAudioMuted = !isAudioMuted;
-    if (DOM.speakerToggle) DOM.speakerToggle.textContent = isAudioMuted ? '🔇' : '🔊';
 }
 
 function resetGame() {
@@ -1015,41 +929,33 @@ function startGame() {
     startTimer();
 }
 
+function toggleAudio() {
+    isAudioMuted = !isAudioMuted;
+    if (DOM.speakerToggle) DOM.speakerToggle.textContent = isAudioMuted ? '🔇' : '🔊';
+}
+
 // ============================================
-// 13. SELEÇÃO DE JOGO
+// 12. SELEÇÃO DE JOGO
 // ============================================
 
 window.selectGame = function(gameType) {
     currentGame = gameType;
-    
-    const names = {
-        'numbers': 'numbers 1-10',
-        'numbers11-20': 'numbers 11-20',
-        'tens': 'tens',
-        'hundreds': 'hundreds',
-        'random21_99': 'numbers 21-99',
-        'random101_999': 'numbers 101-999',
-        'random1001_9999': 'numbers 1,001-9,999',
-        'mixedAdvanced': 'mixed advanced'
-    };
-    DOM.gameSubtitle.textContent = names[gameType] || 'numbers edition';
     
     const modeMap = {
         'numbers': gameData.numbers,
         'numbers11-20': gameData.numbers11_20,
         'tens': gameData.tens,
         'hundreds': gameData.hundreds,
-        'random21_99': gameData.random21_99,
-        'random101_999': gameData.random101_999,
-        'random1001_9999': gameData.random1001_9999,
-        'mixedAdvanced': gameData.mixedAdvanced
+        'random21_99': gameData.numbers,
+        'random101_999': gameData.numbers,
+        'random1001_9999': gameData.numbers,
+        'mixedAdvanced': gameData.numbers
     };
     
     currentNumbers = modeMap[gameType] || gameData.numbers;
     
     const currentHighScore = highScores[gameType] || 0;
-    DOM.highScore.textContent = currentHighScore;
-    console.log(`📊 High score for ${gameType}: ${currentHighScore}`);
+    if (DOM.highScore) DOM.highScore.textContent = currentHighScore;
     
     gameActive = false;
     stopTimer();
@@ -1057,12 +963,18 @@ window.selectGame = function(gameType) {
     removeRestartButton();
     resetEagle();
     
-    DOM.platforms.forEach(p => { p.textContent = '?'; p.disabled = true; p.classList.remove('correct', 'wrong'); });
-    DOM.wordDisplay.textContent = 'Ready?';
-    DOM.instructions.textContent = '👆 Click START to begin';
-    DOM.gameStats.style.display = 'none';
-    DOM.startButton.style.display = 'block';
-    DOM.startButton.disabled = false;
+    DOM.platforms.forEach(p => { 
+        p.textContent = '?'; 
+        p.disabled = true; 
+        p.classList.remove('correct', 'wrong'); 
+    });
+    if (DOM.wordDisplay) DOM.wordDisplay.textContent = 'Ready?';
+    if (DOM.instructions) DOM.instructions.textContent = '👆 Click START to begin';
+    if (DOM.gameStats) DOM.gameStats.style.display = 'none';
+    if (DOM.startButton) { 
+        DOM.startButton.style.display = 'block'; 
+        DOM.startButton.disabled = false; 
+    }
     DOM.game.classList.remove('game-active');
     
     DOM.menu.style.display = 'none';
@@ -1070,57 +982,39 @@ window.selectGame = function(gameType) {
 };
 
 // ============================================
-// 14. INICIAR O JOGO (AGUARDANDO FIREBASE)
+// 13. INICIAR O JOGO
 // ============================================
 
-let authInitialized = false;
-
-function startGameAfterAuth() {
-    if (authInitialized) return;
-    authInitialized = true;
+function initGame() {
+    console.log('Game starting...');
     
-    console.log("Firebase ready, checking user...");
+    if (DOM.canvas) {
+        DOM.canvas.width = 500;
+        DOM.canvas.height = 250;
+    }
     
-    firebase.auth().onAuthStateChanged((user) => {
-        console.log("Auth state changed:", user ? user.email : "No user");
-        
-        highScores = {
-            numbers: 0,
-            numbers11_20: 0,
-            tens: 0,
-            hundreds: 0,
-            random21_99: 0,
-            random101_999: 0,
-            random1001_9999: 0,
-            mixedAdvanced: 0
-        };
-        
-        if (user) {
-            window.currentUser = user;
-            window.isGuest = false;
-            console.log(`👤 User logged in: ${user.uid}`);
-            
-            loadUserScoresFromFirebase().then(() => {
-                console.log("Scores loaded, starting game...");
-                initGame();
-            }).catch(() => {
-                initGame();
-            });
-        } else {
-            window.currentUser = null;
-            window.isGuest = false;
-            console.log("👤 No user logged in");
-            initGame();
-        }
-    });
+    loadImages();
+    audioPlayer = new Audio();
+    
+    DOM.menuButton?.addEventListener('click', showMenu);
+    DOM.speakerToggle?.addEventListener('click', toggleAudio);
+    DOM.startButton?.addEventListener('click', startGame);
+    DOM.platforms.forEach(p => p.addEventListener('click', handlePlatformClick));
+    
+    const leaderboardBtn = document.getElementById('global-rankings-btn');
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', () => {
+            console.log("Botão Rankings clicado!");
+            showLeaderboardModal();
+        });
+    }
+    
+    animate();
 }
 
-if (typeof firebase !== 'undefined') {
-    startGameAfterAuth();
-} else {
-    window.addEventListener('load', () => {
-        if (typeof firebase !== 'undefined') {
-            startGameAfterAuth();
-        }
-    });
-}
+// Iniciar o jogo
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        initGame();
+    }, 100);
+});

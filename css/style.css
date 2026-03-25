@@ -1176,5 +1176,26 @@ body > * {
     background: white;
     box-shadow: 0 10px 20px rgba(201, 161, 59, 0.2);
 }
+/* ============================================ */
+/* POPUP DE PONTUAÇÃO */
+/* ============================================ */
 
+.score-popup {
+    animation: floatUp 0.8s ease-out forwards;
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: inherit;
 }
+
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -150%) scale(1.2);
+    }
+}
+
+
