@@ -516,20 +516,223 @@ function playAudio() {
         fallbackAudio.play().catch(e => console.log(`❌ Fallback também falhou`));
     });
 }
+
 // ============================================
-// 9. FUNÇÕES DO LEADERBOARD (RESUMIDAS)
+// 9. FUNÇÕES DO LEADERBOARD
 // ============================================
 
 async function showLeaderboardModal() {
-    alert("🏆 GLOBAL LEADERBOARDS\n\nEm desenvolvimento!");
+    const existingModal = document.querySelector('.leaderboard-modal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.className = 'leaderboard-modal';
+    modal.innerHTML = `
+        <div class="leaderboard-content">
+            <div class="leaderboard-header">
+                <h2>🏆 GLOBAL LEADERBOARDS</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="leaderboard-tabs" id="leaderboard-tabs"></div>
+            <div id="leaderboard-list" class="leaderboard-list">
+                <div class="leaderboard-empty">Loading...</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const gameModes = [
+        { id: 'numbers', name: '1-10' },
+        { id: 'numbers11-20', name: '11-20' },
+        { id: 'tens', name: 'Tens' },
+        { id: 'hundreds', name: '100s' },
+        { id: 'thousands', name: '1,000s' },
+        { id: 'random21_99', name: '21-99' },
+        { id: 'random101_999', name: '101-999' },
+        { id: 'random1001_9999', name: '1K-9K' },
+        { id: 'mixedAdvanced', name: 'Mixed' }
+    ];
+    
+    const tabsContainer = document.getElementById('leaderboard-tabs');
+    gameModes.forEach((mode, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn' + (index === 0 ? ' active' : '');
+        btn.textContent = mode.name;
+        btn.dataset.mode = mode.id;
+        btn.onclick = () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadLeaderboardForMode(mode.id);
+        };
+        tabsContainer.appendChild(btn);
+    });
+    
+    async function loadLeaderboardForMode(modeId) {
+    const listContainer = document.getElementById('leaderboard-list');
+    listContainer.innerHTML = '<div class="leaderboard-empty">Loading...</div>';
+    
+    let scores = [];
+    
+    // Tentar carregar do Firebase primeiro
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('leaderboards').doc(modeId).collection('scores')
+                .orderBy('score', 'desc')
+                .limit(20)
+                .get();
+            
+            snapshot.forEach(doc => {
+                scores.push(doc.data());
+            });
+            console.log(`✅ Loaded ${scores.length} scores from Firebase for ${modeId}`);
+        } catch (err) {
+            console.error("❌ Error loading from Firebase:", err);
+            // Fallback para localStorage
+            const leaderboardKey = `leaderboard_${modeId}`;
+            scores = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
+        }
+    } else {
+        // Fallback para localStorage
+        const leaderboardKey = `leaderboard_${modeId}`;
+        scores = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
+    }
+    
+    if (scores.length === 0) {
+        listContainer.innerHTML = '<div class="leaderboard-empty">No scores yet. Be the first!</div>';
+        return;
+    }
+    
+    scores.sort((a, b) => b.score - a.score);
+    
+    listContainer.innerHTML = '';
+    scores.slice(0, 20).forEach((score, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
+        item.innerHTML = `
+            <div class="leaderboard-rank">${index + 1}º</div>
+            <div class="leaderboard-name">${escapeHtml(score.name)}</div>
+            <div class="leaderboard-score">${score.score}</div>
+        `;
+        listContainer.appendChild(item);
+    });
+}
+    
+    await loadLeaderboardForMode('numbers');
+    
+    modal.querySelector('.close-modal').onclick = () => modal.remove();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function showNameEntryModal(score, gameMode) {
-    const name = prompt(`🎉 YOU WIN! 🎉\n\nYou scored ${score} points!\n\nEnter your name:`);
-    if (name && name.trim()) {
-        console.log(`💾 Saved: ${name} - ${score}`);
-        alert(`✅ Thanks ${name}!`);
+    console.log("🎯 Vitória! Score:", score, "GameMode:", gameMode);
+    
+    const existingModal = document.querySelector('.name-entry-modal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.className = 'name-entry-modal';
+    modal.innerHTML = `
+        <div class="name-entry-content">
+            <h3>🏆 YOU WIN! 🏆</h3>
+            <p>You scored <strong style="color:#c9a13b; font-size:1.8rem;">${score}</strong> points</p>
+            <p>Enter your name for the global leaderboard:</p>
+            <input type="text" id="player-name-input" class="name-input" placeholder="Your name" maxlength="20">
+            <div class="name-entry-buttons">
+                <button id="submit-name-btn" class="name-entry-btn submit">SUBMIT</button>
+                <button id="skip-name-btn" class="name-entry-btn skip">SKIP</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        const nameInput = document.getElementById('player-name-input');
+        if (nameInput) nameInput.focus();
+    }, 100);
+    
+    const submitBtn = document.getElementById('submit-name-btn');
+    if (submitBtn) {
+        submitBtn.onclick = () => {
+            const name = document.getElementById('player-name-input')?.value;
+            const finalName = (name && name.trim()) ? name.trim() : "Anonymous";
+            console.log("💾 Salvando no leaderboard:", finalName, score, gameMode);
+            saveToLeaderboard(gameMode, score, finalName);
+            modal.remove();
+        };
     }
+    
+    const skipBtn = document.getElementById('skip-name-btn');
+    if (skipBtn) {
+        skipBtn.onclick = () => {
+            console.log("Usuário pulou o leaderboard");
+            modal.remove();
+        };
+    }
+    
+    const nameInput = document.getElementById('player-name-input');
+    if (nameInput) {
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const name = e.target.value;
+                const finalName = (name && name.trim()) ? name.trim() : "Anonymous";
+                console.log("💾 Salvando no leaderboard (Enter):", finalName, score, gameMode);
+                saveToLeaderboard(gameMode, score, finalName);
+                modal.remove();
+            }
+        });
+    }
+}
+
+function saveToLeaderboard(gameMode, score, playerName) {
+    if (!playerName || playerName.trim() === "") return;
+    
+    console.log(`🏆 Saving to leaderboard: ${playerName} - ${score} points in ${gameMode}`);
+    
+    // Salvar no Firebase
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+        const db = firebase.firestore();
+        const leaderboardRef = db.collection('leaderboards').doc(gameMode).collection('scores');
+        
+        leaderboardRef.add({
+            name: playerName.trim(),
+            score: score,
+            date: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            console.log(`✅ Score saved to Firebase: ${gameMode}`);
+        }).catch(err => {
+            console.error("❌ Error saving to Firebase:", err);
+            // Fallback para localStorage
+            saveToLocalLeaderboard(gameMode, score, playerName);
+        });
+    } else {
+        // Fallback para localStorage
+        saveToLocalLeaderboard(gameMode, score, playerName);
+    }
+}
+
+function saveToLocalLeaderboard(gameMode, score, playerName) {
+    const leaderboardKey = `leaderboard_${gameMode}`;
+    let leaderboard = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
+    
+    leaderboard.push({
+        name: playerName,
+        score: score,
+        date: new Date().toISOString()
+    });
+    
+    leaderboard.sort((a, b) => b.score - a.score);
+    
+    if (leaderboard.length > 50) leaderboard = leaderboard.slice(0, 50);
+    
+    localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
 }
 
 // ============================================
