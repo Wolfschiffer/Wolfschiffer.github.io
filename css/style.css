@@ -1,0 +1,636 @@
+/* ============================================ */
+/* 1. RESET BÁSICO - Remove estilos padrão do navegador */
+/* ============================================ */
+* {
+  margin: 0;           /* Remove margens padrão */
+  padding: 0;          /* Remove espaçamentos internos */
+  box-sizing: border-box; /* Faz com que padding e border não aumentem o tamanho dos elementos */
+}
+
+/* ============================================ */
+/* 2. FUNDO DA PÁGINA */
+/* ============================================ */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte bonita e moderna */
+  background: linear-gradient(135deg, #1e3c5c 0%, #2b5a84 100%); /* Gradiente: azul escuro → azul médio */
+  min-height: 100vh;            /* Altura mínima = tela inteira */
+  display: flex;                /* Usa flexbox para centralizar */
+  justify-content: center;      /* Centraliza horizontalmente */
+  align-items: center;          /* Centraliza verticalmente */
+  padding: 20px;                /* Espaçamento nas bordas */
+  position: relative;           /* Para posicionar a águia de fundo */
+}
+
+/* Águia de fundo (watermark) */
+body::before {
+  content: '';                  /* Cria um elemento vazio */
+  position: absolute;           /* Posiciona em relação ao body */
+  top: 0; left: 0;              /* Começa no canto superior esquerdo */
+  width: 100%; height: 100%;    /* Ocupa toda a tela */
+  background-image: url('../images/eagle-transparent.png'); /* Imagem da águia */
+  background-repeat: no-repeat; /* Não repete a imagem */
+  background-position: center;  /* Centraliza */
+  background-size: 140% auto;   /* Tamanho grande para cobrir bem */
+  opacity: 0.08;                /* Bem transparente (8%) */
+  pointer-events: none;         /* Não atrapalha cliques */
+  z-index: 0;                   /* Fica atrás de tudo */
+  filter: blur(0.5px);          /* Levemente desfocada para suavizar */
+  mix-blend-mode: soft-light;   /* Mistura suave com o fundo */
+}
+
+/* Todo conteúdo fica acima da águia de fundo */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================ */
+/* 3. CONTAINERS PRINCIPAIS (Menu e Jogo) */
+/* ============================================ */
+.game-container {
+  background: white;            /* Fundo branco */
+  border-radius: 20px;          /* Cantos arredondados */
+  padding: 20px;                /* Espaçamento interno */
+  border: 3px solid #c9a13b;    /* Borda dourada */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3); /* Sombra para destacar */
+  width: 100%;                  /* Largura total disponível */
+  margin: 0 auto;               /* Centraliza */
+}
+
+#menu-container {
+  max-width: 800px;             /* Menu mais largo */
+}
+
+#game-container {
+  max-width: 600px;             /* Jogo um pouco menor */
+}
+
+/* ============================================ */
+/* 4. CABEÇALHO (Título e Botões) */
+/* ============================================ */
+.header {
+  display: flex;                /* Alinha itens em linha */
+  justify-content: space-between; /* Espaço entre título e botões */
+  align-items: center;          /* Centraliza verticalmente */
+  margin-bottom: 15px;          /* Espaço embaixo */
+  padding-bottom: 10px;         /* Espaço interno embaixo */
+  border-bottom: 2px solid #eef2f6; /* Linha separadora clara */
+}
+
+.title-section h1 {
+  color: #1e3c5c;               /* Azul escuro */
+  font-size: 24px;              /* Tamanho da fonte */
+  line-height: 1.2;             /* Altura da linha */
+}
+
+.title-section .highlight {
+  color: #c9a13b;               /* Dourado para destaque */
+  font-size: 28px;              /* Um pouco maior */
+  font-weight: 800;             /* Negrito forte */
+  display: block;               /* Quebra linha */
+}
+
+.title-section .subtitle {
+  color: #7f8c8d;               /* Cinza suave */
+  font-size: 12px;              /* Pequeno */
+  text-transform: uppercase;    /* Tudo maiúsculo */
+  letter-spacing: 1px;          /* Espaço entre letras */
+  margin-top: 5px;              /* Espaço em cima */
+}
+
+/* Botões do cabeçalho (menu e som) */
+.header-buttons {
+  display: flex;
+  gap: 8px;                     /* Espaço entre os botões */
+}
+
+.menu-btn, .speaker-btn {
+  width: 40px;                  /* Largura */
+  height: 40px;                 /* Altura */
+  border: 2px solid #c9a13b;    /* Borda dourada */
+  border-radius: 50%;           /* Formato circular */
+  background: none;             /* Fundo transparente */
+  font-size: 18px;              /* Tamanho do ícone */
+  cursor: pointer;              /* Mãozinha ao passar */
+  color: #c9a13b;               /* Cor dourada */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;    /* Animação suave */
+}
+
+.menu-btn:hover, .speaker-btn:hover {
+  background: #f8f4ec;          /* Fundo claro ao passar */
+  transform: scale(1.1);        /* Aumenta um pouco */
+}
+
+/* Botão de som quando mutado */
+.speaker-btn.muted {
+  background: #fee2e2;          /* Fundo vermelho claro */
+  border-color: #ef4444;        /* Borda vermelha */
+  color: #ef4444;               /* Ícone vermelho */
+}
+
+/* ============================================ */
+/* 5. INSTRUÇÕES DO JOGO */
+/* ============================================ */
+.instructions {
+  background: #f8fafc;          /* Fundo cinza claro */
+  padding: 10px;                /* Espaçamento interno */
+  border-radius: 8px;           /* Cantos arredondados */
+  margin: 15px 0;               /* Margem em cima e embaixo */
+  border: 1px solid #d1d9e6;    /* Borda suave */
+  color: #1e3c5c;               /* Texto azul escuro */
+  font-weight: 500;             /* Médio negrito */
+  text-align: center;           /* Centralizado */
+  font-size: 14px;              /* Tamanho da fonte */
+}
+
+/* ============================================ */
+/* 6. CANVAS (Onde a águia desenha) */
+/* ============================================ */
+#stickman-canvas {
+  width: 100%;                  /* Largura responsiva */
+  height: auto;                 /* Altura automática */
+  max-width: 500px;             /* Largura máxima */
+  background: #f8fafc;          /* Fundo cinza claro */
+  border: 2px solid #c9a13b;    /* Borda dourada */
+  border-radius: 10px;          /* Cantos arredondados */
+  margin: 0 auto 15px;          /* Centraliza e dá espaço embaixo */
+  display: block;               /* Comportamento de bloco */
+}
+
+/* ============================================ */
+/* 7. PLATAFORMAS (Botões com números) */
+/* ============================================ */
+.platforms {
+  display: grid;                /* Layout em grade */
+  grid-template-columns: repeat(3, 1fr); /* 3 colunas iguais */
+  gap: 15px;                    /* Espaço entre os botões */
+  margin: 15px 0;               /* Margem em cima e embaixo */
+  max-width: 500px;             /* Largura máxima */
+  margin-left: auto;            /* Centraliza */
+  margin-right: auto;
+}
+
+.platform {
+  aspect-ratio: 1;              /* Mantém proporção quadrada */
+  background: #f8fafc;          /* Fundo claro */
+  border: 3px solid #c9a13b;    /* Borda dourada */
+  border-radius: 15px;          /* Cantos arredondados */
+  font-size: 32px;              /* Números grandes */
+  font-weight: bold;            /* Negrito */
+  color: #1e3c5c;               /* Azul escuro */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;              /* Mãozinha */
+  transition: all 0.3s ease;    /* Animação suave */
+  min-height: 60px;             /* Altura mínima para toque no celular */
+}
+
+.platform:hover {
+  background: white;            /* Fundo branco ao passar */
+  transform: scale(1.02);       /* Aumenta um pouco */
+}
+
+.platform.correct {
+  background: #dcfce7;          /* Verde claro para acerto */
+  border-color: #22c55e;        /* Borda verde */
+  color: #166534;               /* Texto verde escuro */
+}
+
+.platform.wrong {
+  background: #fee2e2;          /* Vermelho claro para erro */
+  border-color: #ef4444;        /* Borda vermelha */
+  color: #991b1b;               /* Texto vermelho escuro */
+  animation: shake 0.3s;        /* Animação de tremor */
+}
+
+/* Animação de tremor para resposta errada */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* ============================================ */
+/* 8. PALAVRA QUE APARECE (ex: "five") */
+/* ============================================ */
+.word-box {
+  background: #f8fafc;          /* Fundo claro */
+  padding: 15px;                /* Espaçamento interno */
+  border-radius: 10px;          /* Cantos arredondados */
+  margin: 15px 0;               /* Margem */
+  border: 2px solid #c9a13b;    /* Borda dourada */
+  font-size: 32px;              /* Texto grande */
+  font-weight: bold;            /* Negrito */
+  color: #1e3c5c;               /* Azul escuro */
+  text-align: center;           /* Centralizado */
+  text-transform: capitalize;   /* Primeira letra maiúscula */
+  min-height: 80px;             /* Altura mínima */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================ */
+/* 9. BOTÕES PRINCIPAIS (START, PLAY AGAIN) */
+/* ============================================ */
+.start-btn {
+  background: #f8fafc;          /* Fundo claro */
+  border: 3px solid #c9a13b;    /* Borda dourada */
+  border-radius: 15px;          /* Cantos arredondados */
+  padding: 12px 20px;           /* Espaçamento interno */
+  font-size: 28px;              /* Texto grande */
+  font-weight: bold;            /* Negrito */
+  color: #1e3c5c;               /* Azul escuro */
+  cursor: pointer;
+  width: 100%;                  /* Largura total */
+  max-width: 300px;             /* Largura máxima */
+  margin: 15px auto;            /* Centraliza */
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.start-btn:hover {
+  background: white;            /* Fundo branco ao passar */
+  transform: scale(1.02);       /* Aumenta um pouco */
+}
+
+.restart-btn {
+  background: #f8fafc;
+  border: 3px solid #c9a13b;
+  border-radius: 15px;
+  padding: 12px 25px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #1e3c5c;
+  cursor: pointer;
+  margin: 15px auto;
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.restart-btn:hover {
+  background: white;
+  transform: scale(1.02);
+}
+
+/* ============================================ */
+/* 10. ESTATÍSTICAS (Pontos, Tempo, Multiplicador, Vidas) */
+/* ============================================ */
+.stats {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 10px;
+}
+
+.score-container {
+  text-align: left;
+  flex: 1;
+}
+
+.score-container p {
+  font-size: 14px;
+  color: #1e3c5c;
+  margin: 2px 0;
+}
+
+.high-score {
+  color: #c9a13b !important;
+  font-weight: bold;
+}
+
+/* Caixinhas de Tempo, Multiplicador e Vidas */
+.timer-box, .multiplier-box, .lives-box {
+  text-align: center;
+  min-width: 60px;
+}
+
+.timer-box span, .multiplier-box span, .lives-box span {
+  font-size: 11px;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.timer-display, .multiplier-display {
+  font-size: 16px;
+  font-weight: bold;
+  color: #1e3c5c;
+}
+
+.timer-display {
+  font-family: monospace;       /* Fonte de relógio */
+}
+
+/* Círculos das vidas */
+.lives-display {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.life-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.life-circle.full {
+  background: #ef4444;          /* Vermelho = vida */
+}
+
+.life-circle.empty {
+  background: #cbd5e1;          /* Cinza = vida perdida */
+}
+
+/* ============================================ */
+/* 11. ESTADOS DO JOGO */
+/* ============================================ */
+#game-stats {
+  display: none;                /* Escondido até o jogo começar */
+}
+
+.game-active #game-stats {
+  display: flex;                /* Mostra quando jogo ativo */
+}
+
+.game-active .start-btn {
+  display: none;                /* Esconde botão START durante o jogo */
+}
+
+/* ============================================ */
+/* 12. TELA DE VITÓRIA */
+/* ============================================ */
+.win-screen {
+  position: fixed;              /* Fixo na tela */
+  top: 50%; left: 50%;          /* Centralizado */
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  border: 3px solid #c9a13b;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  z-index: 1000;                /* Fica acima de tudo */
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.win-screen h2 {
+  color: #1e3c5c;
+  font-size: 28px;
+  margin-bottom: 15px;
+}
+
+.win-stats {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.win-stats p {
+  margin: 5px 0;
+  color: #1e3c5c;
+}
+
+.time-title {
+  color: #c9a13b;
+  font-weight: bold;
+  font-size: 20px;
+  animation: pulse 1s infinite; /* Animação de pulsar */
+}
+
+/* Animação de pulsar */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ============================================ */
+/* 13. MENSAGEM DE STREAK (sequência de acertos) */
+/* ============================================ */
+.streak-message {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: #c9a13b;
+  color: #1e3c5c;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-weight: bold;
+  font-size: 18px;
+  animation: floatUp 1.5s ease-out forwards;
+  z-index: 100;
+  white-space: nowrap;
+  border: 2px solid white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Animação de flutuar para cima */
+@keyframes floatUp {
+  0% { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -150%); }
+}
+
+/* ============================================ */
+/* 14. RODAPÉ (Créditos do ebook) */
+/* ============================================ */
+.ebook-credit {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #c9a13b;
+  color: #7f8c8d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.ebook-credit strong {
+  color: #c9a13b;
+}
+
+/* ============================================ */
+/* 15. MENU (Cards dos jogos) */
+/* ============================================ */
+.menu-content {
+  text-align: center;
+}
+
+.eagle-menu-icon {
+  font-size: 80px;
+  margin: 10px 0;
+}
+
+.eagle-menu-icon img {
+  width: 144px;
+  height: 120px;
+  object-fit: contain;
+}
+
+.menu-title {
+  color: #1e3c5c;
+  font-size: 28px;
+  margin: 15px 0;
+}
+
+.game-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.game-card {
+  background: #f8fafc;
+  border: 3px solid #c9a13b;
+  border-radius: 15px;
+  padding: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-align: center;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);  /* Sobe um pouco ao passar */
+  background: white;
+  box-shadow: 0 10px 20px rgba(201, 161, 59, 0.2);
+}
+
+.card-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.game-card h3 {
+  color: #1e3c5c;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.game-card p {
+  color: #7f8c8d;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+/* Badges de dificuldade */
+.card-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: bold;
+  color: white;
+}
+
+.card-badge.easy {
+  background: #22c55e;          /* Verde = fácil */
+}
+
+.card-badge.medium {
+  background: #f59e0b;          /* Laranja = médio */
+}
+
+.card-badge.hard {
+  background: #ef4444;          /* Vermelho = difícil */
+}
+
+.card-badge.expert {
+  background: #9b59b6;          /* Roxo = especialista */
+}
+
+/* Melhor pontuação no card */
+.best-score {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #c9a13b;
+  font-weight: bold;
+}
+
+.best-score-value {
+  color: #1e3c5c;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.menu-footer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px dashed #c9a13b;
+  color: #7f8c8d;
+  font-size: 12px;
+}
+
+/* ============================================ */
+/* 16. RESPONSIVIDADE (CELULAR) */
+/* ============================================ */
+@media (max-width: 500px) {
+  body::before {
+    background-size: 180% auto; /* Águia de fundo maior no celular */
+    opacity: 0.06;
+  }
+  
+  .game-container {
+    padding: 15px;
+  }
+  
+  .stats {
+    flex-wrap: wrap;            /* Quebra linha no celular */
+  }
+  
+  .score-container {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  
+  .platform {
+    font-size: 28px;
+    min-height: 55px;
+  }
+  
+  .word-box {
+    font-size: 24px;
+    padding: 12px;
+    min-height: 65px;
+  }
+  
+  .start-btn {
+    font-size: 22px;
+    padding: 10px 15px;
+  }
+  
+  .game-cards {
+    grid-template-columns: 1fr; /* Uma coluna no celular */
+  }
+  
+  .eagle-menu-icon {
+    font-size: 60px;
+  }
+  
+  .menu-title {
+    font-size: 22px;
+  }
+  
+  .menu-btn, .speaker-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+}
