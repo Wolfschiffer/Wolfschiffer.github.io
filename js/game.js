@@ -10,7 +10,7 @@ const HORIZONTAL_EASING = isMobile ? 0.12 : 0.15;
 
 // Controle de FPS da animação da águia (apenas os frames, não o movimento)
 let lastAnimationFrame = 0;
-const EAGLE_ANIMATION_DELAY = isMobile ? 120 : 80; // 120ms entre frames no mobile
+const EAGLE_ANIMATION_DELAY = isMobile ? 40 : 50; // 120ms entre frames no mobile
 
 const SOUND_EFFECTS = {
     correct: 'sfx/CorrectAnswer.mp3',
@@ -505,7 +505,7 @@ function showNameEntryModal(score, gameMode) {
     setTimeout(() => {
         const nameInput = document.getElementById('player-name-input');
         if (nameInput) nameInput.focus();
-    }, 100);
+    }, 200);
     
     // Botão Submit
     const submitBtn = document.getElementById('submit-name-btn');
