@@ -4,44 +4,25 @@
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-// ============================================
-// CONFIGURAÇÕES ESPECÍFICAS PARA MOBILE
-// ============================================
-
-
 const MOBILE_CONFIG = {
-    // Animações - valores mais rápidos para mobile
-    eagleAnimationDelay: isMobile ? 35 : 50,    // 35ms no mobile (bem mais rápido)
-    jumpSpeed: isMobile ? 0.014 : 0.015,        // Pulos quase iguais
-    horizontalEasing: isMobile ? 0.13 : 0.15,   // Movimento suave
-    
-    // Timer
+    eagleAnimationDelay: isMobile ? 45 : 50,    // Aumentei para 45ms para o flap ser visível
+    jumpSpeed: isMobile ? 0.018 : 0.015,
+    horizontalEasing: isMobile ? 0.15 : 0.15,
     timerInterval: isMobile ? 300 : 200,
-    
-    // Pontuação
     timeBonusMax: isMobile ? 2.3 : 2.5,
     perfectTime: isMobile ? 3.0 : 2.5,
-    
-    // Qualidade visual
-    reduceAnimations: false,  // Não reduzir, manter fluido
+    reduceAnimations: false,
     disableParticles: isMobile,
     canvasScale: isMobile ? 0.9 : 1.0,
-    
-    // Toque
-    tapDelay: isMobile ? 100 : 80,  // Mais rápido
+    tapDelay: isMobile ? 80 : 80,
     platformFontSize: isMobile ? '24px' : '32px',
     wordFontSize: isMobile ? '24px' : '32px'
 };
 
-// Constantes do jogo
 const JUMP_SPEED = MOBILE_CONFIG.jumpSpeed;
 const HORIZONTAL_EASING = MOBILE_CONFIG.horizontalEasing;
 let lastAnimationFrame = 0;
-let lastFrameTime = 0;  // Para controle de FPS da animação
 const EAGLE_ANIMATION_DELAY = MOBILE_CONFIG.eagleAnimationDelay;
-
-
-
 
 // ============================================
 // SISTEMA DE PONTUAÇÃO
@@ -65,7 +46,7 @@ const SOUND_EFFECTS = {
 const PLATFORM_POSITIONS = [100, 250, 400];
 
 // ============================================
-// 2. GAME DATA
+// 2. GAME DATA (PARTE 1 - DADOS BÁSICOS)
 // ============================================
 
 const gameData = {
@@ -93,11 +74,187 @@ const gameData = {
         { value: 700, word: 'seven hundred' }, { value: 800, word: 'eight hundred' },
         { value: 900, word: 'nine hundred' }
     ],
+    thousands: [
+        { value: 1000, word: 'one thousand' }, { value: 2000, word: 'two thousand' },
+        { value: 3000, word: 'three thousand' }, { value: 4000, word: 'four thousand' },
+        { value: 5000, word: 'five thousand' }, { value: 6000, word: 'six thousand' },
+        { value: 7000, word: 'seven thousand' }, { value: 8000, word: 'eight thousand' },
+        { value: 9000, word: 'nine thousand' }
+    ],
     random21_99: [],
     random101_999: [],
     random1001_9999: [],
     mixedAdvanced: []
 };
+
+// ============================================
+// FUNÇÕES GERADORAS DE NÚMEROS
+// ============================================
+
+function generateNumbers_21_99() {
+    const numbers = [];
+    const units = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const tens = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    
+    for (let t = 0; t < tens.length; t++) {
+        for (let u = 0; u < units.length; u++) {
+            numbers.push({
+                value: (t + 2) * 10 + (u + 1),
+                word: `${tens[t]}-${units[u]}`
+            });
+        }
+    }
+    return numbers;
+}
+
+function generateNumbers_101_999() {
+    const numbers = [];
+    const hundreds = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const units = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const tensList = ['ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 
+                   'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    
+    for (let h = 0; h < hundreds.length; h++) {
+        const hundredWord = `${hundreds[h]} hundred`;
+        numbers.push({ value: (h + 1) * 100, word: hundredWord });
+        
+        for (let u = 0; u < units.length; u++) {
+            numbers.push({ value: (h + 1) * 100 + (u + 1), word: `${hundredWord} ${units[u]}` });
+        }
+        
+        for (let s = 0; s < teens.length; s++) {
+            numbers.push({ value: (h + 1) * 100 + 10 + s, word: `${hundredWord} ${teens[s]}` });
+        }
+        
+        for (let t = 0; t < tensList.length; t++) {
+            const tenWord = tensList[t];
+            const tenValue = (t + 1) * 10;
+            if (tenValue >= 20) {
+                numbers.push({ value: (h + 1) * 100 + tenValue, word: `${hundredWord} ${tenWord}` });
+            }
+            for (let u = 0; u < units.length; u++) {
+                numbers.push({ value: (h + 1) * 100 + tenValue + (u + 1), word: `${hundredWord} ${tenWord}-${units[u]}` });
+            }
+        }
+    }
+    
+    const unique = [];
+    const seen = new Set();
+    for (const num of numbers) {
+        if (!seen.has(num.value)) {
+            seen.add(num.value);
+            unique.push(num);
+        }
+    }
+    return unique;
+}
+
+function generateNumbers_1001_9999() {
+    const numbers = [];
+    const thousands = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const hundreds = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const tensList = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    const units = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 
+                   'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    
+    for (let th = 0; th < thousands.length; th++) {
+        const thousandWord = `${thousands[th]} thousand`;
+        const thousandValue = (th + 1) * 1000;
+        
+        numbers.push({ value: thousandValue, word: thousandWord });
+        
+        for (let u = 0; u < units.length; u++) {
+            numbers.push({ value: thousandValue + (u + 1), word: `${thousandWord} ${units[u]}` });
+        }
+        
+        for (let s = 0; s < teens.length; s++) {
+            numbers.push({ value: thousandValue + 10 + s, word: `${thousandWord} ${teens[s]}` });
+        }
+        
+        for (let t = 0; t < tensList.length; t++) {
+            const tenWord = tensList[t];
+            const tenValue = (t + 2) * 10;
+            numbers.push({ value: thousandValue + tenValue, word: `${thousandWord} ${tenWord}` });
+            for (let u = 0; u < units.length; u++) {
+                numbers.push({ value: thousandValue + tenValue + (u + 1), word: `${thousandWord} ${tenWord}-${units[u]}` });
+            }
+        }
+        
+        for (let h = 0; h < hundreds.length; h++) {
+            const hundredWord = `${hundreds[h]} hundred`;
+            const hundredValue = (h + 1) * 100;
+            numbers.push({ value: thousandValue + hundredValue, word: `${thousandWord} ${hundredWord}` });
+            
+            for (let u = 0; u < units.length; u++) {
+                numbers.push({ value: thousandValue + hundredValue + (u + 1), word: `${thousandWord} ${hundredWord} ${units[u]}` });
+            }
+            
+            for (let s = 0; s < teens.length; s++) {
+                numbers.push({ value: thousandValue + hundredValue + 10 + s, word: `${thousandWord} ${hundredWord} ${teens[s]}` });
+            }
+            
+            for (let t = 0; t < tensList.length; t++) {
+                const tenWord = tensList[t];
+                const tenValue = (t + 2) * 10;
+                numbers.push({ value: thousandValue + hundredValue + tenValue, word: `${thousandWord} ${hundredWord} ${tenWord}` });
+                for (let u = 0; u < units.length; u++) {
+                    numbers.push({ value: thousandValue + hundredValue + tenValue + (u + 1), word: `${thousandWord} ${hundredWord} ${tenWord}-${units[u]}` });
+                }
+            }
+        }
+    }
+    
+    const unique = [];
+    const seen = new Set();
+    for (const num of numbers) {
+        if (!seen.has(num.value)) {
+            seen.add(num.value);
+            unique.push(num);
+        }
+    }
+    return unique;
+}
+
+function generateMixedAdvanced() {
+    // Pega todos os números de todas as categorias
+    const allNumbers = [
+        ...gameData.numbers,
+        ...gameData.numbers11_20,
+        ...gameData.tens,
+        ...gameData.hundreds,
+        ...gameData.thousands,
+        ...gameData.random21_99,
+        ...gameData.random101_999,
+        ...gameData.random1001_9999
+    ];
+    
+    // Embaralhar
+    for (let i = allNumbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]];
+    }
+    
+    return allNumbers.slice(0, 50);
+}
+
+// ============================================
+// PREENCHER OS DADOS GERADOS
+// ============================================
+
+gameData.random21_99 = generateNumbers_21_99();
+gameData.random101_999 = generateNumbers_101_999();
+gameData.random1001_9999 = generateNumbers_1001_9999();
+gameData.mixedAdvanced = generateMixedAdvanced();
+
+console.log('Game data loaded:');
+console.log('21-99:', gameData.random21_99.length, 'numbers');
+console.log('101-999:', gameData.random101_999.length, 'numbers');
+console.log('1001-9999:', gameData.random1001_9999.length, 'numbers');
+console.log('Mixed Advanced:', gameData.mixedAdvanced.length, 'numbers');
+
+
 
 // ============================================
 // 3. VARIÁVEIS DE ESTADO
@@ -108,12 +265,20 @@ let currentNumbers = [];
 let currentNumber = null;
 let score = 0;
 let highScores = {
-    numbers: 0, numbers11_20: 0, tens: 0, hundreds: 0,
-    random21_99: 0, random101_999: 0, random1001_9999: 0, mixedAdvanced: 0
+    numbers: 0,
+    numbers11_20: 0,
+    tens: 0, 
+    hundreds: 0,
+    thousands: 0,
+    random21_99: 0, 
+    random101_999: 0,
+    random1001_9999: 0,
+    mixedAdvanced: 0
 };
 
 let lives = 3, streak = 0, multiplier = 1, answered = false, availableNumbers = [];
 let audioPlayer = null, isAudioMuted = false, gameActive = false, gameEnded = false;
+let isWaiting = false;  // DECLARADO APENAS UMA VEZ AQUI
 
 // ============================================
 // 4. EAGLE ANIMAÇÃO
@@ -324,20 +489,7 @@ function playSound(type) {
 }
 
 function playAudio() {
-    console.log("🔊 PLAY AUDIO CHAMADO!");
-    
-    if (!currentNumber) {
-        console.log("❌ currentNumber é null");
-        return;
-    }
-    if (isAudioMuted) {
-        console.log("🔇 Áudio mutado");
-        return;
-    }
-    if (!gameActive) {
-        console.log("⏸️ Jogo não ativo");
-        return;
-    }
+    if (!currentNumber || isAudioMuted || !gameActive) return;
     
     if (audioPlayer) { 
         audioPlayer.pause(); 
@@ -345,184 +497,39 @@ function playAudio() {
     }
     
     let nomeArquivo = currentNumber.word.toLowerCase();
+    
+    // Substituir espaços por underline
+    nomeArquivo = nomeArquivo.replace(/ /g, '_');
+    // Substituir hífens por underline
+    nomeArquivo = nomeArquivo.replace(/-/g, '_');
+    
     console.log(`📁 Tentando: audio/${nomeArquivo}.mp3`);
     
     audioPlayer = new Audio(`audio/${nomeArquivo}.mp3`);
     
-    audioPlayer.play()
-        .then(() => console.log(`✅ Tocou: ${nomeArquivo}.mp3`))
-        .catch(err => console.log(`❌ Erro: ${nomeArquivo}.mp3 -`, err.message));
+    audioPlayer.play().catch(err => {
+        console.log(`❌ Erro: ${nomeArquivo}.mp3 -`, err.message);
+        // Tentativa com espaço (fallback)
+        const nomeComEspaco = currentNumber.word.toLowerCase();
+        console.log(`📁 Tentando fallback: audio/${nomeComEspaco}.mp3`);
+        const fallbackAudio = new Audio(`audio/${nomeComEspaco}.mp3`);
+        fallbackAudio.play().catch(e => console.log(`❌ Fallback também falhou`));
+    });
 }
-
 // ============================================
-// 9. FUNÇÕES DO LEADERBOARD
+// 9. FUNÇÕES DO LEADERBOARD (RESUMIDAS)
 // ============================================
 
 async function showLeaderboardModal() {
-    const existingModal = document.querySelector('.leaderboard-modal');
-    if (existingModal) existingModal.remove();
-    
-    const modal = document.createElement('div');
-    modal.className = 'leaderboard-modal';
-    modal.innerHTML = `
-        <div class="leaderboard-content">
-            <div class="leaderboard-header">
-                <h2>🏆 GLOBAL LEADERBOARDS</h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="leaderboard-tabs" id="leaderboard-tabs"></div>
-            <div id="leaderboard-list" class="leaderboard-list">
-                <div class="leaderboard-empty">Loading...</div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    const gameModes = [
-        { id: 'numbers', name: '1-10' },
-        { id: 'numbers11-20', name: '11-20' },
-        { id: 'tens', name: 'Tens' },
-        { id: 'hundreds', name: '100s' },
-        { id: 'random21_99', name: '21-99' },
-        { id: 'random101_999', name: '101-999' },
-        { id: 'random1001_9999', name: '1K-9K' },
-        { id: 'mixedAdvanced', name: 'Mixed' }
-    ];
-    
-    const tabsContainer = document.getElementById('leaderboard-tabs');
-    gameModes.forEach((mode, index) => {
-        const btn = document.createElement('button');
-        btn.className = 'tab-btn' + (index === 0 ? ' active' : '');
-        btn.textContent = mode.name;
-        btn.dataset.mode = mode.id;
-        btn.onclick = () => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            loadLeaderboardForMode(mode.id);
-        };
-        tabsContainer.appendChild(btn);
-    });
-    
-    function loadLeaderboardForMode(modeId) {
-        const listContainer = document.getElementById('leaderboard-list');
-        listContainer.innerHTML = '<div class="leaderboard-empty">Loading...</div>';
-        
-        const leaderboardKey = `leaderboard_${modeId}`;
-        const scores = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
-        
-        if (scores.length === 0) {
-            listContainer.innerHTML = '<div class="leaderboard-empty">No scores yet. Be the first!</div>';
-            return;
-        }
-        
-        scores.sort((a, b) => b.score - a.score);
-        
-        listContainer.innerHTML = '';
-        scores.slice(0, 20).forEach((score, index) => {
-            const item = document.createElement('div');
-            item.className = 'leaderboard-item';
-            item.innerHTML = `
-                <div class="leaderboard-rank">${index + 1}º</div>
-                <div class="leaderboard-name">${escapeHtml(score.name)}</div>
-                <div class="leaderboard-score">${score.score}</div>
-            `;
-            listContainer.appendChild(item);
-        });
-    }
-    
-    await loadLeaderboardForMode('numbers');
-    
-    modal.querySelector('.close-modal').onclick = () => modal.remove();
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    alert("🏆 GLOBAL LEADERBOARDS\n\nEm desenvolvimento!");
 }
 
 function showNameEntryModal(score, gameMode) {
-    console.log("🎯 Vitória! Score:", score, "GameMode:", gameMode);
-    
-    const existingModal = document.querySelector('.name-entry-modal');
-    if (existingModal) existingModal.remove();
-    
-    const modal = document.createElement('div');
-    modal.className = 'name-entry-modal';
-    modal.innerHTML = `
-        <div class="name-entry-content">
-            <h3>🏆 YOU WIN! 🏆</h3>
-            <p>You scored <strong style="color:#c9a13b; font-size:1.8rem;">${score}</strong> points</p>
-            <p>Enter your name for the global leaderboard:</p>
-            <input type="text" id="player-name-input" class="name-input" placeholder="Your name" maxlength="20">
-            <div class="name-entry-buttons">
-                <button id="submit-name-btn" class="name-entry-btn submit">SUBMIT</button>
-                <button id="skip-name-btn" class="name-entry-btn skip">SKIP</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    setTimeout(() => {
-        const nameInput = document.getElementById('player-name-input');
-        if (nameInput) nameInput.focus();
-    }, 100);
-    
-    const submitBtn = document.getElementById('submit-name-btn');
-    if (submitBtn) {
-        submitBtn.onclick = () => {
-            const name = document.getElementById('player-name-input')?.value;
-            const finalName = (name && name.trim()) ? name.trim() : "Anonymous";
-            console.log("💾 Salvando no leaderboard:", finalName, score, gameMode);
-            saveToLeaderboard(gameMode, score, finalName);
-            modal.remove();
-        };
+    const name = prompt(`🎉 YOU WIN! 🎉\n\nYou scored ${score} points!\n\nEnter your name:`);
+    if (name && name.trim()) {
+        console.log(`💾 Saved: ${name} - ${score}`);
+        alert(`✅ Thanks ${name}!`);
     }
-    
-    const skipBtn = document.getElementById('skip-name-btn');
-    if (skipBtn) {
-        skipBtn.onclick = () => {
-            console.log("Usuário pulou o leaderboard");
-            modal.remove();
-        };
-    }
-    
-    const nameInput = document.getElementById('player-name-input');
-    if (nameInput) {
-        nameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const name = e.target.value;
-                const finalName = (name && name.trim()) ? name.trim() : "Anonymous";
-                console.log("💾 Salvando no leaderboard (Enter):", finalName, score, gameMode);
-                saveToLeaderboard(gameMode, score, finalName);
-                modal.remove();
-            }
-        });
-    }
-}
-
-function saveToLeaderboard(gameMode, score, playerName) {
-    if (!playerName || playerName.trim() === "") return;
-    
-    console.log(`🏆 Saving to leaderboard: ${playerName} - ${score} points in ${gameMode}`);
-    
-    const leaderboardKey = `leaderboard_${gameMode}`;
-    let leaderboard = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
-    
-    leaderboard.push({
-        name: playerName,
-        score: score,
-        date: new Date().toISOString()
-    });
-    
-    leaderboard.sort((a, b) => b.score - a.score);
-    
-    if (leaderboard.length > 50) leaderboard = leaderboard.slice(0, 50);
-    
-    localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
-    console.log(`✅ Saved! Total entries: ${leaderboard.length}`);
 }
 
 // ============================================
@@ -536,24 +543,46 @@ function animate() {
 }
 
 function updateEagleMovement() {
-    // Movimento do pulo (sempre atualiza)
+    const now = Date.now();
+    
+    // ========== MOVIMENTO DO PULO ==========
     if (isJumping) {
         jumpProgress += JUMP_SPEED;
+        
         if (jumpProgress >= 1) {
+            // Pousou
             eagleX = eagleTargetX;
             eagleY = 200;
             isJumping = false;
             jumpProgress = 0;
-            startAnimation('celebrate');
+            
+            if (gameActive && answered) {
+                isWaiting = true;
+                DOM.platforms.forEach(p => p.disabled = true);
+                startAnimation('celebrate');
+                setTimeout(() => {
+                    stopAnimation();
+                    isWaiting = false;
+                    nextRound();
+                }, 300);
+            }
         } else {
+            // Movimento durante o pulo
             eagleX += (eagleTargetX - eagleX) * HORIZONTAL_EASING;
             eagleY = 200 - 35 * Math.sin(jumpProgress * Math.PI);
-            if (currentAnimation !== 'flap') startAnimation('flap');
+            
+            // Inicia flap se não estiver animando
+            if (!isAnimating || currentAnimation !== 'flap') {
+                startAnimation('flap');
+            }
         }
+        
+        // IMPORTANTE: continua para atualizar os frames da animação
+        // NÃO retorna aqui!
     }
     
-    // Animação dos sprites - SEM DELAY EXTRA, apenas o EAGLE_ANIMATION_DELAY
-    const now = Date.now();
+    // ========== ATUALIZAÇÃO DOS FRAMES DA ANIMAÇÃO ==========
+    // Isso roda SEMPRE, independente de estar pulando ou não
     if (now - lastAnimationFrame >= EAGLE_ANIMATION_DELAY) {
         lastAnimationFrame = now;
         
@@ -564,12 +593,13 @@ function updateEagleMovement() {
                 if (animationFrame >= eagleImages.flap.length) {
                     animationFrame = 0;
                 }
+                console.log("🎬 Flap frame:", animationFrame);
             }
             else if (currentAnimation === 'celebrate') {
                 if (animationFrame >= eagleImages.celebrate.length) {
-                    stopAnimation();
-                    if (!isJumping && gameActive && answered) nextRound();
+                    // não faz nada, o setTimeout controla
                 }
+                console.log("🎬 Celebrate frame:", animationFrame);
             }
             else if (currentAnimation === 'wrong') {
                 if (animationFrame >= eagleImages.wrong.length) {
@@ -579,6 +609,7 @@ function updateEagleMovement() {
         }
     }
 }
+
 
 
 function drawEagle() {
@@ -607,18 +638,11 @@ function drawEagle() {
         let size = currentAnimation === 'flap' ? 165 : 150;
         DOM.ctx.drawImage(img, -size/2, -size, size, size);
         DOM.ctx.restore();
-    } else {
-        DOM.ctx.fillStyle = '#c9a13b';
-        DOM.ctx.beginPath();
-        DOM.ctx.arc(eagleX, eagleY, 30, 0, Math.PI * 2);
-        DOM.ctx.fill();
-        DOM.ctx.fillStyle = '#1e3c5c';
-        DOM.ctx.font = '30px sans-serif';
-        DOM.ctx.fillText('🦅', eagleX - 18, eagleY + 12);
     }
 }
 
 function startAnimation(type) { 
+    console.log('🎬 Starting animation:', type, 'frame:', animationFrame);
     currentAnimation = type; 
     animationFrame = 0; 
     isAnimating = true; 
@@ -636,6 +660,7 @@ function jumpToPlatform(idx) {
     isJumping = true; 
     jumpProgress = 0; 
     eagleDirection = eagleTargetX > eagleX ? 1 : -1; 
+    startAnimation('flap');
 }
 
 function resetEagle() { 
@@ -647,6 +672,7 @@ function resetEagle() {
     animationFrame = 0; 
     isAnimating = false; 
     eagleDirection = -1; 
+    isWaiting = false;
 }
 
 // ============================================
@@ -655,7 +681,7 @@ function resetEagle() {
 
 function handlePlatformClick(e) {
     const btn = e.currentTarget, idx = parseInt(btn.dataset.index);
-    if (!gameActive || answered || !currentNumber) return;
+    if (!gameActive || answered || !currentNumber || isWaiting) return;
     
     if (parseInt(btn.dataset.value) === currentNumber.value) {
         const roundScore = calculateRoundScore();
@@ -674,8 +700,17 @@ function handlePlatformClick(e) {
         answered = true;
         DOM.platforms.forEach(p => p.disabled = true);
         
-        if (PLATFORM_POSITIONS[idx] === eagleX) startAnimation('celebrate');
-        else jumpToPlatform(idx);
+        if (PLATFORM_POSITIONS[idx] === eagleX) {
+            isWaiting = true;
+            startAnimation('celebrate');
+            setTimeout(() => {
+                stopAnimation();
+                isWaiting = false;
+                nextRound();
+            }, 300);
+        } else {
+            jumpToPlatform(idx);
+        }
     } else {
         btn.classList.add('wrong');
         streak = 0;
@@ -684,7 +719,6 @@ function handlePlatformClick(e) {
         playSound('wrong');
         startAnimation('wrong');
         loseLife();
-        showWrongPopup();
         setTimeout(() => btn.classList.remove('wrong'), 300);
     }
 }
@@ -750,36 +784,27 @@ function winGame() {
     const totalGameTime = endTime || currentTime;
     let speedBonus = 1.0;
     
-    if (totalGameTime <= 22) {
-        speedBonus = 2.4;
-    } else if (totalGameTime <= 30) {
-        speedBonus = 2.2;
-    } else if (totalGameTime <= 45) {
-        speedBonus = 1.8;
-    } else if (totalGameTime <= 65) {
-        speedBonus = 1.5;
-    } else if (totalGameTime <= 90) {
-        speedBonus = 1.2;
-    } else {
-        speedBonus = 1.0;
-    }
+    if (totalGameTime <= 22) speedBonus = 2.4;
+    else if (totalGameTime <= 30) speedBonus = 2.2;
+    else if (totalGameTime <= 45) speedBonus = 1.8;
+    else if (totalGameTime <= 65) speedBonus = 1.5;
+    else if (totalGameTime <= 90) speedBonus = 1.2;
+    else speedBonus = 1.0;
     
     const lifeBonus = 1 + (lives * 0.2);
     const finalScore = Math.floor(score * speedBonus * lifeBonus);
-    const bonusPoints = finalScore - score;
     
     gameActive = false;
     gameEnded = true;
     stopTimer();
     playSound('win');
-    
     DOM.platforms.forEach(p => p.disabled = true);
-    
-    showWinWithBonusDetails(speedBonus, lifeBonus, bonusPoints, finalScore, totalGameTime);
     
     setTimeout(() => {
         showNameEntryModal(finalScore, currentGame);
-    }, 800);
+    }, 500);
+    
+    showWinWithBonus();
 }
 
 function loseLife() { 
@@ -803,6 +828,7 @@ function nextRound() {
     if (DOM.wordDisplay) DOM.wordDisplay.textContent = currentNumber.word;
     setupPlatforms();
     answered = false;
+    isWaiting = false;
     currentAnimation = 'idle'; 
     animationFrame = 0; 
     isAnimating = false;
@@ -839,25 +865,16 @@ function setupPlatforms() {
     });
 }
 
-function showWinWithBonusDetails(speedBonus, lifeBonus, bonusPoints, finalScore, totalGameTime) {
+function showWinWithBonus() {
     let winScreen = document.createElement('div');
     winScreen.className = 'win-screen';
-    
-    const mins = Math.floor(totalGameTime / 60);
-    const secs = totalGameTime % 60;
-    const timeFormatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    
     winScreen.innerHTML = `
         <h2>🎉 YOU WIN! 🎉</h2>
         <div class="win-stats">
-            <p>⏱️ Time: ${timeFormatted}</p>
-            <p>💰 Base Score: ${score}</p>
-            <p>⚡ Speed Bonus: ${speedBonus.toFixed(1)}x</p>
-            <p>❤️ Lives Bonus: ${lifeBonus.toFixed(1)}x (${lives} lives left)</p>
-            <p class="bonus-points">✨ Bonus Points: +${bonusPoints}</p>
-            <p class="total-score">🏆 TOTAL: ${finalScore}</p>
+            <p>⏱️ Time: ${DOM.timer.textContent}</p>
+            <p>💰 Score: ${score}</p>
+            <button class="restart-btn">PLAY AGAIN</button>
         </div>
-        <button class="restart-btn">PLAY AGAIN</button>
     `;
     
     DOM.game.appendChild(winScreen);
@@ -908,12 +925,23 @@ function addRestartButton() {
 }
 
 function resetGame() {
+    // Embaralha todos os números do modo atual
     const shuffled = [...currentNumbers];
     for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    availableNumbers = shuffled.slice(0, 10);
+    
+    // Sempre 10 perguntas, mas se tiver menos números, usa todos
+    const questionsCount = Math.min(10, shuffled.length);
+    availableNumbers = shuffled.slice(0, questionsCount);
+    
+    console.log(`🔄 Reset game: ${currentGame}`);
+    console.log(`   Total numbers available: ${currentNumbers.length}`);
+    console.log(`   Questions in this game: ${availableNumbers.length}`);
+    if (availableNumbers.length > 0) {
+        console.log(`   First question: ${availableNumbers[0].value} - ${availableNumbers[0].word}`);
+    }
     
     score = 0;
     lives = 3;
@@ -960,13 +988,16 @@ window.selectGame = function(gameType) {
         'numbers11-20': gameData.numbers11_20,
         'tens': gameData.tens,
         'hundreds': gameData.hundreds,
-        'random21_99': gameData.numbers,
-        'random101_999': gameData.numbers,
-        'random1001_9999': gameData.numbers,
-        'mixedAdvanced': gameData.numbers
+        'thousands': gameData.thousands,           // NOVO
+        'random21_99': gameData.random21_99,
+        'random101_999': gameData.random101_999,
+        'random1001_9999': gameData.random1001_9999,
+        'mixedAdvanced': gameData.mixedAdvanced
     };
     
     currentNumbers = modeMap[gameType] || gameData.numbers;
+    
+    console.log(`📊 Game mode: ${gameType} - ${currentNumbers.length} numbers available`);
     
     const currentHighScore = highScores[gameType] || 0;
     if (DOM.highScore) DOM.highScore.textContent = currentHighScore;
@@ -1026,7 +1057,6 @@ function initGame() {
     animate();
 }
 
-// Iniciar o jogo
 window.addEventListener('load', () => {
     setTimeout(() => {
         initGame();
