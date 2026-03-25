@@ -269,13 +269,115 @@ let lives = 3, streak = 0, multiplier = 1, answered = false, availableNumbers = 
 let audioPlayer = null, isAudioMuted = false, gameActive = false, gameEnded = false;
 
 // ============================================
-// 5. EAGLE ANIMAÇÃO
+// 5. EAGLE ANIMAÇÃO (VERSÃO SIMPLIFICADA)
 // ============================================
 
-let eagleX = 250, eagleY = 200, eagleTargetX = 250, isJumping = false, jumpProgress = 0, eagleDirection = -1;
-let currentAnimation = 'idle', animationFrame = 0, frameCounter = 0, isAnimating = false;
+let lastFrameTime = 0;
+const ANIMATION_FRAME_DELAY = isMobile ? 150 : 100; // 150ms no mobile, 100ms no desktop
 
-// ============================================
+function animate() {
+    requestAnimationFrame(animate);
+    
+    const now = Date.now();
+    const delta = now - lastFrameTime;
+    
+    // Movimento da águia (sempre suave)
+    updateEagleMovement();
+    
+    // Atualiza os frames da animação apenas quando necessário
+    if (delta >= ANIMATION_FRAME_DELAY) {
+        lastFrameTime = now;
+        updateAnimationFrame();
+    }
+    
+    // Desenha sempre
+    drawEagle();
+}
+
+// Movimento da águia (mantém igual)
+function updateEagleMovement() {
+    if (isJumping) {
+        jumpProgress += JUMP_SPEED;
+        if (jumpProgress >= 1) {
+            eagleX = eagleTargetX;
+            eagleY = 200;
+            isJumping = false;
+            jumpProgress = 0;
+            startAnimation('celebrate');
+        } else {
+            eagleX += (eagleTargetX - eagleX) * HORIZONTAL_EASING;
+            eagleY = 200 - 35 * Math.sin(jumpProgress * Math.PI);
+            if (currentAnimation !== 'flap') startAnimation('flap');
+        }
+    }
+}
+
+// Atualiza o frame da animação (apenas quando necessário)
+function updateAnimationFrame() {
+    if (!isAnimating) return;
+    
+    animationFrame++;
+    
+    if (currentAnimation === 'flap') {
+        if (animationFrame >= eagleImages.flap.length) {
+            animationFrame = 0;
+        }
+    }
+    else if (currentAnimation === 'celebrate') {
+        if (animationFrame >= eagleImages.celebrate.length) {
+            stopAnimation();
+            if (!isJumping && gameActive && answered) nextRound();
+        }
+    }
+    else if (currentAnimation === 'wrong') {
+        if (animationFrame >= eagleImages.wrong.length) {
+            stopAnimation();
+        }
+    }
+}
+
+function drawEagle() {
+    if (!DOM.ctx) return;
+    
+    DOM.ctx.clearRect(0, 0, 500, 250);
+    
+    // Escolhe a imagem baseada na animação atual
+    let img = eagleImages.idle;
+    
+    if (currentAnimation === 'flap' && eagleImages.flap[animationFrame]?.complete) {
+        img = eagleImages.flap[animationFrame];
+    }
+    else if (currentAnimation === 'celebrate' && eagleImages.celebrate[animationFrame]?.complete) {
+        img = eagleImages.celebrate[animationFrame];
+    }
+    else if (currentAnimation === 'wrong' && eagleImages.wrong[animationFrame]?.complete) {
+        img = eagleImages.wrong[animationFrame];
+    }
+    
+    if (img?.complete && img.naturalHeight > 0) {
+        DOM.ctx.save();
+        DOM.ctx.translate(eagleX, eagleY);
+        if (eagleDirection === 1) DOM.ctx.scale(-1, 1);
+        DOM.ctx.scale(1.2, 1);
+        
+        let size = currentAnimation === 'flap' ? 165 : 150;
+        DOM.ctx.drawImage(img, -size/2, -size, size, size);
+        DOM.ctx.restore();
+    }
+}
+
+function startAnimation(type) { 
+    currentAnimation = type; 
+    animationFrame = 0; 
+    isAnimating = true; 
+    lastFrameTime = Date.now(); // Reset para começar imediatamente
+}
+
+function stopAnimation() { 
+    currentAnimation = 'idle'; 
+    animationFrame = 0; 
+    isAnimating = false; 
+}// ============================================
 // 6. TIMER
 // ============================================
 
