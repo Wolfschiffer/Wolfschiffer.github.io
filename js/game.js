@@ -47,22 +47,57 @@ function generateNumbers_101_999() {
     const tensList = ['ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
     
     for (let h = 0; h < hundreds.length; h++) {
+        const hundredWord = `${hundreds[h]} hundred`;
+        
+        // Centenas redondas (100, 200, 300...)
+        numbers.push({ value: (h + 1) * 100, word: hundredWord });
+        
+        // 101-109 (one hundred one, one hundred two...)
+        for (let u = 0; u < units.length; u++) {
+            const value = (h + 1) * 100 + (u + 1);
+            const word = `${hundredWord} ${units[u]}`;
+            numbers.push({ value, word });
+        }
+        
+        // 110-119 (one hundred ten, one hundred eleven...)
+        for (let s = 0; s < 10; s++) {
+            const specials = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 
+                              'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+            const value = (h + 1) * 100 + 10 + s;
+            const word = `${hundredWord} ${specials[s]}`;
+            numbers.push({ value, word });
+        }
+        
+        // 120-199 (one hundred twenty, one hundred twenty-one, etc.)
         for (let t = 0; t < tensList.length; t++) {
+            const tenWord = tensList[t];
+            const tenValue = (t + 1) * 10;
+            
+            // Dezenas redondas (120, 130, 140...)
+            const valueTen = (h + 1) * 100 + tenValue;
+            const wordTen = `${hundredWord} ${tenWord}`;
+            numbers.push({ value: valueTen, word: wordTen });
+            
+            // Dezenas + unidades (121, 122...)
             for (let u = 0; u < units.length; u++) {
-                if (t === 0 && u === 0) continue; // pular centenas redondas
-                
-                const value = (h + 1) * 100 + (t + 1) * 10 + (u + 1);
-                let word = `${hundreds[h]} hundred`;
-                
-                if (t === 0) word += ` ${units[u]}`;
-                else if (u === 0) word += ` ${tensList[t]}`;
-                else word += ` ${tensList[t]}-${units[u]}`;
-                
+                const value = (h + 1) * 100 + tenValue + (u + 1);
+                const word = `${hundredWord} ${tenWord}-${units[u]}`;
                 numbers.push({ value, word });
             }
         }
     }
-    return numbers;
+    
+    // Remover duplicatas (se houver)
+    const unique = [];
+    const seen = new Set();
+    for (const num of numbers) {
+        if (!seen.has(num.value)) {
+            seen.add(num.value);
+            unique.push(num);
+        }
+    }
+    
+    return unique;
 }
 
 function generateNumbers_1001_9999() {
@@ -101,28 +136,6 @@ function generateNumbers_1001_9999() {
     return numbers;
 }
 
-function generateMixedAdvanced() {
-    const categories = [
-        generateNumbers_21_99(), generateNumbers_101_999(), generateNumbers_1001_9999(),
-        gameData.numbers, gameData.numbers11_20, gameData.tens, gameData.hundreds
-    ];
-    
-    const mixed = [];
-    for (let cat of categories) {
-        const shuffled = [...cat];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        mixed.push(...shuffled.slice(0, 10));
-    }
-    
-    for (let i = mixed.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
-    }
-    return mixed;
-}
 
 // ============================================
 // 3. GAME DATA
@@ -162,8 +175,42 @@ const gameData = {
     random21_99: generateNumbers_21_99(),
     random101_999: generateNumbers_101_999(),
     random1001_9999: generateNumbers_1001_9999(),
-    mixedAdvanced: generateMixedAdvanced()
+    mixedAdvanced: []
+
 };
+
+
+
+function generateMixedAdvanced() {
+    const categories = [
+        gameData.random21_99,
+        gameData.random101_999,
+        gameData.random1001_9999,
+        gameData.numbers,
+        gameData.numbers11_20,
+        gameData.tens,
+        gameData.hundreds
+    ];
+    
+    const mixed = [];
+    for (let cat of categories) {
+        const shuffled = [...cat];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        mixed.push(...shuffled.slice(0, 10));
+    }
+    
+    for (let i = mixed.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
+    }
+    return mixed;
+}
+
+    gameData.mixedAdvanced = generateMixedAdvanced();
+
 
 // ============================================
 // 4. VARIÁVEIS DE ESTADO
@@ -429,8 +476,18 @@ function playSound(type) { if (isAudioMuted) return; new Audio(SOUND_EFFECTS[typ
 function playAudio() {
     if (!currentNumber || isAudioMuted || !gameActive) return;
     if (audioPlayer) { audioPlayer.pause(); audioPlayer.currentTime = 0; }
-    audioPlayer.src = `audio/${currentNumber.word}.mp3`;
+    
+    // Converter o texto para o formato do arquivo
+    // Exemplo: "nine thousand nine hundred two" → "nine_thousand_nine_hundred_two"
+    let nomeArquivo = currentNumber.word
+        .replace(/ /g, "_")           // espaços viram underscores
+        .replace(/-/g, "_")           // hífens viram underscores
+        .toLowerCase();               // tudo minúsculo
+    
+    audioPlayer.src = `audio/${nomeArquivo}.mp3`;
+    
     audioPlayer.play().catch(() => {
+        // Fallback: se não encontrar o áudio, usa voz do navegador
         if ('speechSynthesis' in window) {
             let utter = new SpeechSynthesisUtterance(currentNumber.word);
             utter.lang = 'en-US';
@@ -473,17 +530,44 @@ function nextRound() {
 }
 
 function setupPlatforms() {
-    let options = [currentNumber.value];
-    let values = currentNumbers.map(n => n.value);
+    // O número correto é currentNumber.value
+    const correctValue = currentNumber.value;
+    
+    // Opções: começa com o número correto
+    let options = [correctValue];
+    
+    // Pegar valores possíveis do jogo atual
+    let possibleValues = currentNumbers.map(n => n.value);
+    
+    // Adicionar 2 números aleatórios diferentes do correto
     while (options.length < 3) {
-        let val = values[Math.floor(Math.random() * values.length)];
-        if (!options.includes(val)) options.push(val);
+        const randomIndex = Math.floor(Math.random() * possibleValues.length);
+        const randomValue = possibleValues[randomIndex];
+        if (!options.includes(randomValue) && randomValue !== correctValue) {
+            options.push(randomValue);
+        }
     }
+    
+    // Embaralhar as opções
     for (let i = options.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(Math.random() * (i + 1));
         [options[i], options[j]] = [options[j], options[i]];
     }
-    DOM.platforms.forEach((p, i) => { p.textContent = options[i]; p.dataset.value = options[i]; });
+    
+    // Atualizar os botões
+    DOM.platforms.forEach((p, i) => {
+        p.textContent = options[i];
+        p.dataset.value = options[i];
+    });
+    
+    // Verificar se o número correto está nas opções (debug)
+    const hasCorrect = [...DOM.platforms].some(p => parseInt(p.dataset.value) === correctValue);
+    if (!hasCorrect) {
+        console.error("ERRO: Número correto não está nas opções!", correctValue);
+        // Forçar correção
+        DOM.platforms[0].textContent = correctValue;
+        DOM.platforms[0].dataset.value = correctValue;
+    }
 }
 
 function calculateSpeedBonus() { return endTime <= 0 ? 1 : Math.min(5, Math.max(1, Math.round(5 * (15 / endTime) * 100) / 100)); }
